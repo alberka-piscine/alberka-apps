@@ -1,0 +1,16 @@
+rules_version = '2';
+// Règles Storage – Alberka Apps : photos, signatures et PDF réservés aux membres.
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isMember() {
+      return request.auth != null && request.auth.token.email != null
+        && firestore.exists(/databases/(default)/documents/membres/$(request.auth.token.email.lower()));
+    }
+    match /{allPaths=**} {
+      allow read: if isMember();
+      allow create: if isMember() && request.resource.size < 20 * 1024 * 1024;
+      allow update: if false;
+      allow delete: if isMember();
+    }
+  }
+}

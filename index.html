@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alberka Apps</title>
+<meta name="theme-color" content="#13335e">
+<link rel="icon" href="shared/logo-alberka.png">
+<style>
+:root{color-scheme:light dark;--bg:light-dark(#f5f6f8,#0b1420);--card:light-dark(#fff,#121e30);--ink:light-dark(#0f1d30,#e8edf4);--mute:light-dark(#5a6676,#9aa8ba);--line:light-dark(#dde2e9,#243349)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,sans-serif}
+header{background:#13335e;color:#fff;border-bottom:3px solid #c9a45c;padding:18px max(5vw,16px);display:flex;gap:14px;align-items:center}
+header img{width:48px;height:48px;border-radius:12px}h1{margin:0;font-size:22px}
+main{max-width:720px;margin:0 auto;padding:24px max(5vw,16px)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
+a.app,div.app{display:flex;flex-direction:column;align-items:center;gap:10px;padding:18px 10px;background:var(--card);border:1px solid var(--line);border-radius:16px;text-decoration:none;color:inherit;font-weight:700;text-align:center}
+.app img,.app span.ph{width:72px;height:72px;border-radius:18px}.app span.ph{background:var(--line)}
+div.app{color:var(--mute);font-weight:600}
+</style>
+</head>
+<body>
+<header><img src="shared/logo-alberka.png" alt=""><div><h1>Alberka Apps</h1><div style="opacity:.8">Les outils internes d'Alberka Piscine</div></div></header>
+<main>
+<div class="grid">
+<a class="app" href="pv/"><img src="pv/icon-192.png" alt="">PV de réception</a>
+<div class="app"><span class="ph"></span>Conciergerie<br><small>à venir</small></div>
+<div class="app"><span class="ph"></span>Site &amp; réalisations<br><small>à venir</small></div>
+</div>
+</main>
+</body>
+</html>

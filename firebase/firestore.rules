@@ -1,0 +1,39 @@
+rules_version = '2';
+// Règles Firestore – Alberka Apps
+// Seules les personnes listées dans la collection « membres » (document = e-mail en minuscules)
+// peuvent lire ou écrire. Les PV signés ne peuvent être ni modifiés ni supprimés,
+// sauf le suivi des réserves.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function email() { return request.auth.token.email.lower(); }
+    function isMember() {
+      return request.auth != null && request.auth.token.email != null
+        && exists(/databases/$(database)/documents/membres/$(email()));
+    }
+    function isAdmin() {
+      return isMember() && get(/databases/$(database)/documents/membres/$(email())).data.role == 'admin';
+    }
+
+    match /membres/{mail} {
+      allow read: if isMember();
+      allow write: if isAdmin();
+    }
+
+    match /pvs/{id} {
+      allow read, create: if isMember();
+      allow update: if isMember()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reservesOuvertes', 'suiviPar']);
+      allow delete: if false;
+    }
+
+    match /files/{id} {
+      allow read, create, update: if isMember();
+      // une photo jointe à un PV signé reste comme preuve
+      allow delete: if isMember() && resource.data.get('pvId', null) == null;
+    }
+
+    match /{coll}/{docId=**} {
+      allow read, write: if isMember() && !(coll in ['membres', 'pvs', 'files']);
+    }
+  }
+}

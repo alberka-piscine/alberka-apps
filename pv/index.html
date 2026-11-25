@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PV Alberka</title>
+<meta name="theme-color" content="#13335e">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* VOICE: outil de chantier sobre et sûr, lisible dehors, gros boutons pour le doigt
+   IDEA: le carnet de réception du poseur, un dossier par client
+   PICTURE: l'outil lui-même : liste des dossiers, assistant en 5 étapes, pad de signature
+   COLOUR and TYPE: bleu marine Alberka + sable doré sur fond clair ; Plus Jakarta Sans
+   LAYOUT: une colonne calme jusqu'à 900px, barre d'actions collée en bas dans l'assistant */
+:root{color-scheme:light dark;
+--bg:light-dark(#f5f6f8,#0b1420);--card:light-dark(#ffffff,#121e30);--ink:light-dark(#0f1d30,#e8edf4);--mute:light-dark(#5a6676,#9aa8ba);
+--line:light-dark(#dde2e9,#243349);--navy2:light-dark(#13335e,#3a67a8);--sand:#c9a45c;--soft:light-dark(#eef2f8,#172638);
+--ok:light-dark(#17794a,#4cc98a);--ko:light-dark(#b3261e,#ff8a80);--warn:light-dark(#8f5b00,#f3b74f)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Plus Jakarta Sans",system-ui,sans-serif;overflow-x:clip}
+header.top{background:#13335e;color:#fff;border-bottom:3px solid var(--sand)}
+.top .in{max-width:900px;margin:0 auto;padding:10px max(4vw,14px);display:flex;align-items:center;gap:12px}
+.logo{width:40px;height:40px;border-radius:10px;flex:none;box-shadow:0 0 0 1px rgba(255,255,255,.25)}
+.top .brand{display:flex;gap:10px;align-items:center;background:none;border:0;color:#fff;font:inherit;cursor:pointer;padding:0;text-align:left}
+.top b{font-size:17px;display:block;line-height:1.2}.top small{display:block;font-size:12.5px;opacity:.78;font-weight:500}
+.top nav{margin-left:auto;display:flex;gap:6px}
+.top nav button{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:10px;min-height:42px;padding:0 14px;font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+main{max-width:900px;margin:0 auto;padding:18px max(4vw,14px) 60px}
+h1{font-size:clamp(26px,4vw,34px);line-height:1.08;margin:0 0 6px;letter-spacing:-.02em;text-wrap:balance}
+h2{font-size:19px;margin:0 0 12px;letter-spacing:-.01em}h3{font-size:16px;margin:18px 0 6px}
+p{margin:0 0 10px}.mute{color:var(--mute)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:0 18px;border-radius:12px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-weight:700;font-size:15px;cursor:pointer;text-decoration:none;white-space:nowrap}
+.btn.pri{background:var(--navy2);border-color:var(--navy2);color:#fff}.btn.gold{background:var(--sand);border-color:var(--sand);color:#1d1606}
+.btn.sm{min-height:40px;padding:0 13px;font-size:14px;border-radius:10px}.btn.dang{color:var(--ko)}
+.lnk{background:none;border:0;color:var(--navy2);font:inherit;font-weight:700;cursor:pointer;padding:8px 0;min-height:44px}
+:focus-visible{outline:3px solid var(--sand);outline-offset:2px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px}.sec{margin-top:16px}
+input,select,textarea{width:100%;min-height:46px;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);font:inherit;font-size:16px}
+textarea{min-height:88px;resize:vertical}
+.f{display:block;margin-bottom:14px}.f>span{display:block;font-size:13.5px;font-weight:700;margin-bottom:5px;color:var(--mute)}
+.g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 14px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.hero{display:flex;gap:14px;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;margin:4px 0 16px}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;font-size:13.5px;color:var(--mute);font-weight:600}
+.stat b{display:block;font-size:26px;color:var(--ink);line-height:1.1}
+.search{margin-bottom:14px}
+.crow{display:flex;gap:14px;align-items:center;width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer;margin-bottom:10px;padding:14px 16px}
+.av{width:44px;height:44px;border-radius:50%;background:var(--soft);color:var(--navy2);display:grid;place-items:center;font-weight:800;flex:none}
+.crow .m{flex:1}.crow .m b{display:block}.crow .m span{font-size:14px;color:var(--mute)}
+.badge{display:inline-block;padding:3px 10px;border-radius:99px;font-size:12.5px;font-weight:700;white-space:nowrap}
+.b-ok{background:light-dark(#e2f3e9,#123826);color:var(--ok)}.b-warn{background:light-dark(#fbefd9,#3a2c10);color:var(--warn)}
+.b-ko{background:light-dark(#fbe3e1,#3d1614);color:var(--ko)}.b-todo{background:var(--soft);color:var(--mute)}
+.empty{text-align:center;padding:40px 16px;color:var(--mute)}
+.steps{display:flex;gap:6px;margin:12px 0 16px}
+.steps div{flex:1 1 0;font-size:12.5px;font-weight:700;color:var(--mute);line-height:1.2}
+.steps div::before{content:"";display:block;height:5px;border-radius:5px;background:var(--line);margin-bottom:6px}
+.steps .on{color:var(--ink)}.steps .on::before{background:var(--sand)}.steps .done::before{background:var(--navy2)}
+.chk{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px 14px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+.ops{display:flex;gap:6px;flex-wrap:wrap}
+.op{min-height:44px;padding:0 12px;border-radius:10px;border:1.5px solid var(--line);background:var(--card);font:inherit;font-weight:700;font-size:14px;color:var(--mute);cursor:pointer;white-space:nowrap}
+.chk[data-v=ok] .op[data-v=ok]{background:var(--ok);border-color:var(--ok);color:#fff}
+.chk[data-v=ko] .op[data-v=ko]{background:var(--ko);border-color:var(--ko);color:#fff}
+.chk[data-v=na] .op[data-v=na]{background:var(--mute);border-color:var(--mute);color:#fff}
+.dec{display:grid;gap:10px}
+.dec label{display:flex;gap:12px;align-items:flex-start;padding:14px;border:1.5px solid var(--line);border-radius:12px;cursor:pointer}
+.dec input,.acc input{width:22px;height:22px;min-height:0;flex:none;margin-top:2px;accent-color:#13335e}
+.dec label:has(input:checked){border-color:var(--navy2);background:var(--soft)}
+.acc{display:flex;gap:12px;align-items:flex-start;margin-top:16px;font-weight:600}
+.res{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
+.rth{display:block;margin-top:8px;width:120px;height:90px;object-fit:cover;border-radius:8px}
+.ph{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px}
+.ph .t,.ph button.t{aspect-ratio:1;border-radius:10px;overflow:hidden;border:1px solid var(--line);padding:0;background:var(--soft);cursor:pointer;position:relative;display:block;width:100%}
+.ph img{width:100%;height:100%;object-fit:cover;display:block}
+.ph .x{position:absolute;top:4px;right:4px;width:32px;height:32px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;font-size:18px;cursor:pointer}
+.ph .up{position:absolute;left:4px;bottom:4px;font-size:11px;background:rgba(0,0,0,.6);color:#fff;padding:1px 6px;border-radius:6px;font-style:normal}
+.addph{display:grid;place-items:center;aspect-ratio:1;border:2px dashed var(--line);border-radius:10px;color:var(--navy2);font-weight:700;cursor:pointer;text-align:center;font-size:14px;padding:6px}
+.sigbox{border:2px dashed #b9c2cf;border-radius:12px;background:#fff;position:relative;height:190px;margin-bottom:8px}
+.sigbox canvas{width:100%;height:100%;display:block;touch-action:none;border-radius:10px}
+.sigbox::after{content:"Signez ici avec le doigt";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:#a9b2bf;font-weight:700;pointer-events:none;white-space:nowrap}
+.sigbox.has::after{display:none}
+.wbar{position:sticky;bottom:0;background:var(--bg);padding:12px 0 max(12px,env(safe-area-inset-bottom));display:flex;gap:10px;justify-content:space-between;border-top:1px solid var(--line);margin-top:18px}
+.legal{font-size:13.5px;color:var(--mute);background:var(--soft);border-radius:12px;padding:14px}.legal p:last-child{margin:0}
+.note{border-left:4px solid var(--sand);padding:10px 14px;background:var(--soft);border-radius:8px;margin-bottom:14px;font-size:14.5px}
+.err{color:var(--ko);font-weight:700;margin:8px 0}
+.pvl{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:12px 0;border-bottom:1px solid var(--line)}
+.pvl:last-child{border:0}.pvl .mute{font-size:14px}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.chip{min-height:44px;padding:0 16px;border-radius:99px;border:1.5px solid var(--line);background:var(--card);font:inherit;font-weight:700;color:var(--ink);cursor:pointer}
+.chip.on{background:var(--navy2);border-color:var(--navy2);color:#fff}
+.kv{display:grid;grid-template-columns:10em minmax(0,1fr);gap:6px 12px;margin:0}.kv dt{color:var(--mute);font-weight:600}.kv dd{margin:0}
+.tool{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0 12px}.tool select{width:auto;flex:1 1 180px}
+#modal{position:fixed;inset:0;display:none;z-index:50;background:rgba(8,15,28,.62);padding:16px;place-items:center}
+#modal.on{display:grid}.mbox{background:var(--card);border-radius:16px;padding:18px;max-width:680px;width:100%;max-height:92vh;overflow:auto}
+.mbox img{max-width:100%;border-radius:10px;display:block;margin:0 auto 12px}
+#toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,180%);background:#13335e;color:#fff;padding:12px 18px;border-radius:12px;font-weight:600;transition:transform .25s;z-index:60;max-width:92vw;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+#toast.on{transform:translate(-50%,0)}
+.spin{width:38px;height:38px;border-radius:50%;border:4px solid var(--line);border-top-color:var(--sand);animation:sp 1s linear infinite;margin:6px auto 12px}
+@keyframes sp{to{transform:rotate(1turn)}}
+@media(prefers-reduced-motion:reduce){#toast{transition:none}.spin{animation:none}}
+@media(max-width:600px){.g2{grid-template-columns:minmax(0,1fr)}.chk{grid-template-columns:minmax(0,1fr)}.stats{gap:6px}.stat b{font-size:22px}.top small{display:none}.kv{grid-template-columns:minmax(0,1fr)}.kv dd{margin-bottom:6px}.steps div{font-size:0}.steps .on{font-size:12.5px}}
+
+.top .in{padding-top:max(10px,env(safe-area-inset-top))}
+</style>
+</head>
+<body>
+<header class="top"><div class="in">
+<button class="brand" data-act="home" aria-label="Accueil">
+<img class="logo" src="data:image/png;base64,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" width="40" height="40" alt="Alberka Piscine">
+<span><b>Réceptions chantier</b><small>Dossiers clients · PV signés</small></span></button>
+<nav id="nav" hidden><button data-act="home">Dossiers</button><button data-act="settings">Ma société</button></nav>
+</div></header>
+<main id="app"></main>
+<div id="modal"><div class="mbox" id="mbox"></div></div>
+<div id="toast" role="status"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script type="module">
+import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
+import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut,sendPasswordResetEmail} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+import {initializeFirestore,persistentLocalCache,persistentMultipleTabManager,doc,collection,query,where,getDoc,setDoc,updateDoc,deleteDoc,onSnapshot} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+import {getStorage,ref,uploadBytes,getDownloadURL,deleteObject,getBlob as fbGetBlob} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-storage.js';
+import {firebaseConfig} from '../shared/firebase-config.js';
+
+const fapp=initializeApp(firebaseConfig);
+const auth=getAuth(fapp);
+let fdb;try{fdb=initializeFirestore(fapp,{localCache:persistentLocalCache({tabManager:persistentMultipleTabManager()})})}catch(e){fdb=initializeFirestore(fapp,{})}
+const fst=getStorage(fapp);
+
+const $=s=>document.querySelector(s), app=$('#app');
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const CATS={abri:'Abri de piscine',piscine:'Piscine coque',terrasse:'Terrasse mobile',spa:'Spa / sauna'};
+const COMMON=[
+{k:'devis',t:"Les travaux ont été réalisés conformément au devis / bon de commande signé."},
+{k:'art',t:"Les travaux ont été exécutés selon les règles de l'art et les prescriptions du fabricant."},
+{k:'modele',t:"Le modèle, les dimensions, le coloris et les options correspondent à ma commande."},
+{k:'aspect',t:"Je ne constate aucun défaut d'aspect (rayure, choc, fissure, éclat), hors réserves éventuelles."},
+{k:'demo',t:"Le fonctionnement m'a été démontré (ouverture, fermeture, manœuvres, verrouillage)."},
+{k:'consignes',t:"Les consignes d'utilisation, d'entretien et de sécurité m'ont été expliquées."},
+{k:'notice',t:"La notice d'utilisation et d'entretien m'a été remise (papier ou numérique)."},
+{k:'garanties',t:"Les conditions et documents de garantie m'ont été remis."},
+{k:'access',t:"Les clés, télécommandes et accessoires prévus m'ont été remis.",na:1},
+{k:'nettoyage',t:"Le chantier a été nettoyé ; déchets, gravats et emballages ont été évacués."},
+{k:'abords',t:"Aucun dégât n'est constaté sur les existants (pelouse, dallage, plage, clôture, réseaux), hors réserves éventuelles."},
+{k:'photos',t:"Des photos de fin de chantier ont été prises en ma présence."}];
+const LISTS={
+abri:[{k:'a_ancrage',t:"Les rails et ancrages sont fixés ; l'abri est d'aplomb et aligné."},
+{k:'a_coul',t:"Les modules coulissent correctement sur toute la longueur ; butées et freins sont en place."},
+{k:'a_verrou',t:"Les verrous et serrures fonctionnent ; il m'a été conseillé de garder les clés hors de portée des enfants."},
+{k:'a_vent',t:"Les consignes « vent fort et neige » m'ont été données (abri fermé et verrouillé, aération)."},
+{k:'a_motor',t:"Motorisation : fonctionnement et fins de course vérifiés.",na:1},
+{k:'a_nf',t:"L'attestation de conformité NF P90-309 (abri, dispositif de sécurité) m'a été remise.",na:1}],
+piscine:[{k:'p_niveau',t:"La coque est posée de niveau ; remblai et ceinture sont réalisés."},
+{k:'p_hydro',t:"Les raccordements hydrauliques sont réalisés, sans fuite apparente constatée."},
+{k:'p_eau',t:"La mise en eau est effectuée, ou les consignes de mise en eau m'ont été données.",na:1},
+{k:'p_filtr',t:"La filtration et les équipements (pompe, filtre, traitement, éclairage) sont mis en route et fonctionnent.",na:1},
+{k:'p_local',t:"Le local technique m'a été expliqué (vannes, programmateur, lavage du filtre).",na:1},
+{k:'p_elec',t:"L'alimentation électrique est réalisée par un électricien qualifié (à ma charge si elle est hors devis).",na:1},
+{k:'p_secu',t:"J'ai été informé de l'obligation d'équiper la piscine d'un dispositif de sécurité normalisé (loi du 3 janvier 2003) et du dispositif retenu."},
+{k:'p_trait',t:"Les conseils de traitement de l'eau et d'hivernage m'ont été donnés."}],
+terrasse:[{k:'t_rails',t:"Les rails et supports sont fixés ; la terrasse est de niveau."},
+{k:'t_coul',t:"L'ouverture et la fermeture fonctionnent sur toute la course, sans point dur."},
+{k:'t_motor',t:"Motorisation et télécommande : fonctionnement et sécurités vérifiés.",na:1},
+{k:'t_charge',t:"La charge admissible et les consignes d'usage (pas de manœuvre chargée ou occupée) m'ont été indiquées."},
+{k:'t_verrou',t:"Le verrouillage en position fermée fonctionne."},
+{k:'t_nf',t:"L'attestation de conformité NF P90-308 (couverture de sécurité) m'a été remise.",na:1}],
+spa:[{k:'s_support',t:"L'équipement est posé sur un support plan et adapté à sa charge."},
+{k:'s_elec',t:"L'alimentation électrique (ligne dédiée, protection différentielle 30 mA) est réalisée par un électricien qualifié.",na:1},
+{k:'s_route',t:"L'équipement a été mis en route ; pompes, chauffage et commandes fonctionnent.",na:1},
+{k:'s_couv',t:"La couverture et ses attaches de sécurité sont en place et m'ont été expliquées.",na:1}]};
+const PHOTO_CATS={avant:'Avant travaux',pendant:'Pendant les travaux',fin:'Fin de chantier',reserve:'Réserve',sav:'SAV / incident'};
+const DOC_CATS={devis:'Devis signé',facture:'Facture',dp:'Déclaration préalable',attest:'Attestation / certificat',notice:'Notice / garantie',autre:'Autre'};
+const SECU=["Abri de piscine — NF P90-309","Couverture de sécurité — NF P90-308","Barrière de protection — NF P90-306","Alarme — NF P90-307","Dispositif existant chez le client","À la charge du client (non fourni)","Sans objet"];
+const BRANDS=["ABORAL","Ref Cover","Alukov","AquaComet","Abris LabelBleu"];
+const LOGO=document.querySelector('.logo')?.src||'';
+const DEF={raison:'ALBERKA PISCINE',forme:'SAS au capital de 1 500 € - RCS Lorient 922 363 957',adresse:'40 Rue Saint Guénolé, 56270 Ploemeur',siret:'922 363 957 00015',tel:'06 89 08 49 18',email:'contact@alberkapiscine.fr',site:'alberkapiscine.fr',assureur:'MAAF Assurances SA',police:'156198000 R 001',representant:'Florian Renonce'};
+const S={db:null,assets:null,dl:null,user:null,member:null,members:[],clients:[],pvs:[],cfg:{...DEF},view:'home',cid:null,files:[],unF:null,q:'',wiz:null,ready:false,err:null,edit:null,last:null};
+
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+const fmtD=s=>{if(!s)return'';const m=String(s).match(/^(\d{4})-(\d\d)-(\d\d)/);return m?`${m[3]}/${m[2]}/${m[1]}`:s};
+const fmtDT=s=>{try{return new Date(s).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}catch(e){return s}};
+const client=id=>S.clients.find(c=>c.id===id);
+const fullName=c=>c?[c.civ,c.prenom,c.nom].filter(Boolean).join(' '):'';
+const addr=c=>c?[c.adresse,[c.cp,c.ville].filter(Boolean).join(' ')].filter(Boolean).join(', '):'';
+const chAddr=c=>!c?'':(c.idem!==false||!c.chAdresse)?addr(c):[c.chAdresse,[c.chCp,c.chVille].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+const safe=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^A-Za-z0-9-]+/g,'_').replace(/^_|_$/g,'').slice(0,60)||'sans_nom';
+const checklist=cat=>[...COMMON,...(LISTS[cat]||[])];
+const getP=(o,p)=>p.split('.').reduce((t,k)=>t?.[k],o);
+function setP(o,p,v){const k=p.split('.');let t=o;while(k.length>1)t=t[k.shift()];t[k[0]]=v}
+async function sha256(buf){const h=await crypto.subtle.digest('SHA-256',buf);return[...new Uint8Array(h)].map(b=>b.toString(16).padStart(2,'0')).join('')}
+const d2b=u=>{const[h,b]=u.split(',');const bin=atob(b);const a=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i);return new Blob([a],{type:h.slice(5,h.indexOf(';'))})};
+const b2d=b=>new Promise((r,j)=>{const f=new FileReader();f.onload=()=>r(f.result);f.onerror=j;f.readAsDataURL(b)});
+async function compress(file,max=1600){const url=URL.createObjectURL(file);try{
+ const img=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=url});
+ const r=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight));const w=Math.round(img.naturalWidth*r),h=Math.round(img.naturalHeight*r);
+ const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);
+ const dataUrl=c.toDataURL('image/jpeg',.82);return{blob:d2b(dataUrl),dataUrl,w,h}}finally{URL.revokeObjectURL(url)}}
+async function up(blob,type){if(!S.assets)throw{message:"envoi de fichiers non autorisé pour ce compte"};const r=await S.assets.upload(blob,{type});return r.id}
+const getBlob=async id=>{try{return await fbGetBlob(ref(fst,id))}catch(e){throw{message:'téléchargement direct bloqué ('+(e.code||'réseau')+')'}}};
+
+let tt;function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),3800)}
+function modal(h){$('#mbox').innerHTML=h;$('#modal').classList.add('on')}
+function closeModal(){$('#modal').classList.remove('on');$('#mbox').innerHTML=''}
+function busy(m){modal(`<div class="spin"></div><p style="text-align:center;font-weight:700" id="bmsg">${esc(m)}</p>`)}
+function busyMsg(m){const b=$('#bmsg');if(b)b.textContent=m}
+
+/* ---------- statut ---------- */
+function st(cid){const p=S.pvs.filter(x=>x.clientId===cid);if(!p.length)return{k:'todo',t:'À réceptionner'};
+ if(p.some(x=>x.reservesOuvertes))return{k:'warn',t:'Réserves en cours'};
+ const last=[...p].sort((a,b)=>(b.signedAt||'').localeCompare(a.signedAt||''))[0];
+ return last.decision==='refus'?{k:'ko',t:'Réception refusée'}:{k:'ok',t:'Réceptionné'}}
+const decLabel=p=>p.type==='levee'?(p.reservesOuvertes?'Levée partielle':'Réserves levées'):({sans:'Sans réserve',avec:'Avec réserves',refus:'Refusée'}[p.decision]||'');
+const decK=p=>p.reservesOuvertes?'warn':p.decision==='refus'?'ko':'ok';
+
+/* ---------- vues ---------- */
+function banner(){
+ if(S.err==='offline')return`<p class="note">Pas de connexion internet : vos saisies sont gardées sur l'appareil et partiront au retour du réseau. Les photos et la signature d'un PV demandent le réseau.</p>`;
+ if(S.err==='slow')return`<p class="note">Les dossiers mettent du temps à arriver : vérifiez la connexion internet. Ils s'afficheront dès qu'elle revient.</p>`;
+ if(S.err==='dberr')return`<p class="note">Les dossiers sont momentanément inaccessibles. Rechargez la page.</p>`;
+ 
+ return'';}
+function listHtml(){const q=S.q.toLowerCase().trim();
+ const l=S.clients.filter(c=>!q||[c.nom,c.prenom,c.societe,c.ville,c.chVille,c.tel,c.email,c.produit].join(' ').toLowerCase().includes(q)).sort((a,b)=>(b.updatedAt||'').localeCompare(a.updatedAt||''));
+ if(!l.length)return`<div class="empty card">${S.clients.length?'Aucun client ne correspond à la recherche.':S.ready?'Aucun dossier pour l’instant. Créez votre premier client.':'Chargement des dossiers…'}</div>`;
+ return l.map(c=>{const s=st(c.id);return`<button class="card crow" data-act="open" data-id="${esc(c.id)}"><span class="av">${esc(((c.prenom||'')[0]||'')+((c.nom||'')[0]||'')).toUpperCase()}</span><span class="m"><b>${esc(fullName(c)||'Sans nom')}</b><span>${esc([c.chVille||c.ville,c.produit].filter(Boolean).join(' · '))}</span></span><span class="badge b-${s.k}">${s.t}</span></button>`}).join('')}
+function vHome(){const nRes=S.pvs.filter(p=>p.reservesOuvertes).length;
+ return`${banner()}<section class="hero"><div><h1>Dossiers clients</h1><p class="mute">Un dossier par client : coordonnées, PV de réception signé, photos et documents.</p></div><div class="row">${S.ip?'<button class="btn" data-act="install">Installer l\u2019appli</button>':''}<button class="btn pri" data-act="newClient">+ Nouveau client</button></div></section>
+<div class="stats"><div class="stat"><b>${S.clients.length}</b>clients</div><div class="stat"><b>${S.pvs.length}</b>PV signés</div><div class="stat"><b>${nRes}</b>réserves en cours</div></div>
+<input class="search" id="q" type="search" placeholder="Rechercher un client, une ville, un téléphone…" value="${esc(S.q)}" aria-label="Rechercher"><div id="clist">${listHtml()}</div>`}
+
+function vClient(){const c=client(S.cid);if(!c)return`<button class="lnk" data-act="home">← Dossiers</button><p class="empty">Dossier introuvable ou en cours de chargement.</p>`;
+ const s=st(c.id),pvs=S.pvs.filter(p=>p.clientId===c.id).sort((a,b)=>(b.signedAt||'').localeCompare(a.signedAt||''));
+ const photos=S.files.filter(f=>f.kind==='photo'),docs=S.files.filter(f=>f.kind==='doc'),canUp=!!S.assets;
+ const pvHtml=pvs.length?pvs.map(p=>`<div class="pvl"><div><b>${esc(p.ref)}</b> <span class="badge b-${decK(p)}">${decLabel(p)}</span><div class="mute">${p.type==='levee'?'Levée des réserves':'Réception'} · ${esc(CATS[p.ouvrage?.cat]||'')} ${esc(p.ouvrage?.modele||'')} · signé le ${esc(fmtDT(p.signedAt))}${p.reserves?.length?` · ${p.reserves.length} réserve(s)`:''}</div></div><div class="row"><a class="btn sm" href="${esc(p.pdfAssetId)}" target="_blank" rel="noopener">Voir</a><button class="btn sm" data-act="dlPv" data-id="${esc(p.id)}">Télécharger</button>${p.reservesOuvertes&&canUp?`<button class="btn sm gold" data-act="levee" data-id="${esc(p.id)}">Lever les réserves</button>`:''}</div></div>`).join(''):`<p class="mute">Aucun PV pour l'instant.</p>`;
+ const groups=Object.keys(PHOTO_CATS).map(k=>[k,photos.filter(f=>f.cat===k)]).filter(g=>g[1].length);
+ const phHtml=groups.length?groups.map(([k,l])=>`<h3>${PHOTO_CATS[k]} <span class="mute">(${l.length})</span></h3><div class="ph">${l.map(f=>`<button class="t" data-act="photo" data-id="${esc(f.id)}"><img loading="lazy" src="${esc(f.assetId)}" alt="${esc(PHOTO_CATS[k])}"></button>`).join('')}</div>`).join(''):`<p class="mute">Aucune photo.</p>`;
+ const docHtml=docs.length?docs.map(f=>`<div class="pvl"><div><b>${esc(DOC_CATS[f.cat]||'Document')}</b><div class="mute">${esc(f.name)} · ${esc(fmtD(f.createdAt))}</div></div><div class="row"><a class="btn sm" href="${esc(f.assetId)}" target="_blank" rel="noopener">Voir</a><button class="btn sm" data-act="dlFile" data-id="${esc(f.id)}">Télécharger</button>${canUp?`<button class="btn sm dang" data-act="delFile" data-id="${esc(f.id)}">Supprimer</button>`:''}</div></div>`).join(''):`<p class="mute">Aucun document.</p>`;
+ return`${banner()}<button class="lnk" data-act="home">← Dossiers</button>
+<div class="card"><div class="row" style="justify-content:space-between;align-items:flex-start"><div><h1>${esc(fullName(c)||'Sans nom')}</h1>${c.societe?`<p class="mute">${esc(c.societe)}</p>`:''}</div><span class="badge b-${s.k}">${s.t}</span></div>
+<dl class="kv"><dt>Téléphone</dt><dd>${c.tel?`<a href="tel:${esc(c.tel.replace(/\s/g,''))}">${esc(c.tel)}</a>`:'—'}</dd><dt>E-mail</dt><dd>${esc(c.email||'—')}</dd><dt>Adresse</dt><dd>${esc(addr(c)||'—')}</dd><dt>Chantier</dt><dd>${esc(chAddr(c)||'—')}</dd>${c.produit?`<dt>Produit</dt><dd>${esc(c.produit)}</dd>`:''}${c.commercial?`<dt>Commercial</dt><dd>${esc(c.commercial)}</dd>`:''}</dl>
+<div class="row" style="margin-top:14px">${canUp?`<button class="btn pri" data-act="newPv">Faire signer le PV de réception</button>`:''}<button class="btn" data-act="editClient">Modifier</button><button class="btn" data-act="zip">Exporter le dossier (.zip)</button></div></div>
+<div class="card sec"><h2>PV de réception</h2>${pvHtml}</div>
+<div class="card sec"><h2>Photos</h2>${canUp?`<div class="tool"><select id="pcat" aria-label="Catégorie des photos">${Object.entries(PHOTO_CATS).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select><label class="btn sm">Appareil photo<input type="file" accept="image/*" capture="environment" data-file="cphoto" hidden></label><label class="btn sm">Galerie<input type="file" accept="image/*" multiple data-file="cphoto" hidden></label></div>`:''}${phHtml}</div>
+<div class="card sec"><h2>Documents</h2>${canUp?`<div class="tool"><select id="dcat" aria-label="Type de document">${Object.entries(DOC_CATS).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select><label class="btn sm">Ajouter un PDF ou une image<input type="file" accept="application/pdf,image/*" multiple data-file="cdoc" hidden></label></div>`:''}${docHtml}</div>
+<div class="card sec"><h2>Notes et historique</h2><textarea id="notes" placeholder="Échanges, rendez-vous, SAV, remarques…">${esc(c.notes||'')}</textarea><div class="row" style="margin-top:8px"><button class="btn sm" data-act="saveNotes">Enregistrer les notes</button></div></div>`}
+
+function vCForm(){const c=S.edit?client(S.edit)||{}:{idem:true};const i=(n,l,t='text',x='')=>`<label class="f"><span>${l}</span><input name="${n}" type="${t}" value="${esc(c[n]||'')}" ${x}></label>`;
+ return`<button class="lnk" data-act="${S.edit?'back':'home'}">← Annuler</button><h1>${S.edit?'Modifier le client':'Nouveau client'}</h1>
+<form id="cf" class="card"><h2>Maître d'ouvrage</h2><div class="g2"><label class="f"><span>Civilité</span><select name="civ">${['','M.','Mme','M. et Mme'].map(v=>`<option ${c.civ===v?'selected':''} value="${v}">${v||'—'}</option>`).join('')}</select></label>${i('societe','Société (uniquement si client professionnel)')}${i('nom','Nom *','text','required autocomplete="off"')}${i('prenom','Prénom')}${i('tel','Téléphone *','tel','required')}${i('email','E-mail','email')}</div>
+${i('adresse','Adresse')}<div class="g2">${i('cp','Code postal','text','inputmode="numeric"')}${i('ville','Ville')}</div>
+<label class="acc" style="margin:0 0 14px"><input type="checkbox" name="idem" ${c.idem!==false?'checked':''}> L'adresse du chantier est la même</label>
+<div id="chz" ${c.idem!==false?'hidden':''}>${i('chAdresse','Adresse du chantier')}<div class="g2">${i('chCp','Code postal du chantier')}${i('chVille','Ville du chantier')}</div></div>
+<div class="g2">${i('produit','Produit prévu','text','placeholder="ex. Abri Ref Cover bas 8 m"')}${i('commercial','Commercial')}</div>
+<div class="row"><button class="btn pri" type="submit">Enregistrer le client</button></div></form>`}
+
+function vSettings(){const c=S.cfg;const i=(n,l,x='')=>`<label class="f"><span>${l}</span><input name="${n}" value="${esc(c[n]||'')}" ${x}></label>`;
+ return`<button class="lnk" data-act="home">← Dossiers</button><h1>Ma société</h1><p class="mute">Les informations de votre entreprise (pas celles des clients) : elles apparaissent en en-tête de chaque PV. L'assurance décennale et la RC pro sont attendues sur vos documents.</p>
+<form id="sf" class="card"><div class="g2">${i('raison','Raison sociale')}${i('forme','Forme et capital','placeholder="ex. SAS au capital de …"')}</div>${i('adresse','Adresse du siège')}<div class="g2">${i('siret','SIRET')}${i('tel','Téléphone')}${i('email','E-mail')}${i('site','Site web')}${i('assureur','Assureur décennale / RC pro')}${i('police','N° de police')}</div>${i('representant','Représentant par défaut sur les PV')}
+<button class="btn pri" type="submit">Enregistrer</button></form>
+${S.member?.role==='admin'?`<div class="card sec"><h2>Équipe : qui a accès</h2><p class="mute">Ajoutez l'e-mail d'un poseur ou d'un commercial ici, puis créez son compte (e-mail + mot de passe) dans la console Firebase, rubrique Authentication.</p>${S.members.map(m=>`<div class="pvl"><div><b>${esc(m.id)}</b><div class="mute">${esc({admin:'Administrateur',poseur:'Poseur',commercial:'Commercial'}[m.role]||m.role)}</div></div>${m.id!==S.user.email.toLowerCase()?`<button class="btn sm dang" data-act="delMember" data-id="${esc(m.id)}">Retirer</button>`:'<span class="mute">vous</span>'}</div>`).join('')}<div class="tool"><input id="mmail" type="email" placeholder="e-mail de la personne" style="flex:2 1 220px"><select id="mrole"><option value="poseur">Poseur</option><option value="commercial">Commercial</option><option value="admin">Administrateur</option></select><button class="btn" data-act="addMember">Ajouter</button></div></div>`:''}
+<div class="card sec"><p class="mute">Connecté en tant que <b>${esc(S.user?.email)}</b></p><button class="btn" data-act="logout">Se déconnecter</button></div>`}
+
+/* ---------- assistant PV ---------- */
+const STEPS={reception:['Chantier','Ouvrage','Vérifications','Réserves & photos','Signatures'],levee:['Chantier','Ouvrage','Réserves','Photos','Signatures']};
+function newWiz(cid,type,parent){const c=client(cid)||{};
+ return{pvId:'pv'+uid(),step:0,clientId:cid,type,parentId:parent?.id||null,parentRef:parent?.ref||'',ref:'PV-'+today().replace(/-/g,'')+'-'+Math.random().toString(36).slice(2,6).toUpperCase(),
+ date:today(),lieu:c.chVille||c.ville||'',refs:parent?{...parent.refs}:{devis:'',devisDate:'',debut:'',fin:today(),facture:''},
+ ouvrage:parent?{...parent.ouvrage}:{cat:'abri',marque:'',modele:'',dims:'',coloris:'',options:'',serie:'',securite:''},
+ equipe:'',checks:{},decision:type==='levee'?'levee':'sans',reserves:parent?(parent.reserves||[]).filter(r=>!r.levee).map(r=>({txt:r.txt,delai:r.delai||'',levee:false,comment:''})):[],
+ refus:'',obs:'',photos:[],signClientNom:[c.prenom,c.nom].filter(Boolean).join(' '),signEntNom:S.cfg.representant||'',sigC:null,sigE:null,rC:2.4,rE:2.4,accept:false,saved:null}}
+const dKey=cid=>'pvDraft:'+cid;
+let dt;function saveDraft(){clearTimeout(dt);dt=setTimeout(saveDraftNow,400)}
+function saveDraftNow(){const w=S.wiz;if(!w)return;w.saved=new Date().toISOString();
+ try{localStorage.setItem(dKey(w.clientId),JSON.stringify(w))}catch(e){try{localStorage.setItem(dKey(w.clientId),JSON.stringify({...w,photos:w.photos.filter(p=>p.assetId).map(p=>({...p,dataUrl:null}))}))}catch(e2){}}}
+function loadDraft(cid){try{return JSON.parse(localStorage.getItem(dKey(cid))||'null')}catch(e){return null}}
+function clearDraft(cid){try{localStorage.removeItem(dKey(cid))}catch(e){}}
+const src=p=>p.dataUrl||p.assetId;
+const inp=(l,p,t='text',x='')=>`<label class="f"><span>${l}</span><input type="${t}" data-b="${p}" value="${esc(getP(S.wiz,p)||'')}" ${x}></label>`;
+const ta=(l,p,ph='')=>`<label class="f"><span>${l}</span><textarea data-b="${p}" placeholder="${esc(ph)}">${esc(getP(S.wiz,p)||'')}</textarea></label>`;
+const phAdd=(k,extra='')=>`<label class="addph">Appareil photo<input type="file" accept="image/*" capture="environment" data-file="${k}" ${extra} hidden></label><label class="addph">Galerie<input type="file" accept="image/*" multiple data-file="${k}" ${extra} hidden></label>`;
+
+function declaration(w){const c=client(w.clientId),n=w.signClientNom||fullName(c),e=S.cfg.raison||"l'entreprise";
+ if(w.type==='levee'){const nl=w.reserves.filter(r=>r.levee).length,t=w.reserves.length;return`Je soussigné(e) ${n}, maître de l'ouvrage, constate contradictoirement avec le représentant de ${e} la levée de ${nl} réserve(s) sur ${t} émise(s) au PV n° ${w.parentRef}.`+(nl<t?` ${t-nl} réserve(s) restent à lever.`:' Toutes les réserves sont levées.')}
+ const base=`Je soussigné(e) ${n}, maître de l'ouvrage, après avoir examiné l'ouvrage contradictoirement avec le représentant de ${e}, `;
+ return base+({sans:'prononce la réception des travaux sans réserve.',avec:`prononce la réception des travaux avec ${w.reserves.length} réserve(s), que l'entreprise s'engage à lever dans les délais indiqués.`,refus:'refuse la réception des travaux pour le motif indiqué.'}[w.decision]||'')+` Réception à effet du ${fmtD(w.date)}.`}
+function legal(w){const sig="Le présent procès-verbal a été établi et signé sur support électronique (tablette ou téléphone). Les signatures manuscrites numérisées, la date et l'heure de signature et une empreinte numérique des données y sont associées. Un exemplaire PDF est remis au maître de l'ouvrage.";
+ if(w.type==='levee')return[`Le présent procès-verbal constate contradictoirement la levée des réserves émises lors de la réception (PV n° ${w.parentRef}). Les réserves non levées restent à lever par l'entreprise dans le délai convenu.`,sig];
+ return["Conformément à l'article 1792-6 du Code civil, la réception est l'acte par lequel le maître de l'ouvrage déclare accepter l'ouvrage avec ou sans réserves. Elle est prononcée contradictoirement, en présence des parties signataires.",
+ "La réception emporte transfert de la garde de l'ouvrage au maître de l'ouvrage. Elle est le point de départ des garanties légales : garantie de parfait achèvement (1 an), garantie de bon fonctionnement des éléments d'équipement dissociables (2 ans minimum) et, pour les ouvrages qui y sont soumis, garantie décennale (10 ans).",
+ "Les défauts apparents au jour de la réception doivent être mentionnés en réserve au présent procès-verbal. Les réserves sont levées dans le délai convenu ; leur levée est constatée par écrit, contradictoirement.",sig]}
+
+function stepBody(){const w=S.wiz,c=client(w.clientId),lev=w.type==='levee';
+ if(w.step===0)return`<div class="card"><h2>${lev?'Levée des réserves':'Réception des travaux'}</h2>${lev?`<p class="note">Suite au PV n° ${esc(w.parentRef)} : ${w.reserves.length} réserve(s) à contrôler.</p>`:''}<div class="g2">${inp('Date de réception','date','date')}${inp('Lieu (commune)','lieu')}</div><p class="mute">Chantier : ${esc(chAddr(c)||'adresse non renseignée')}</p></div>
+<div class="card sec"><h2>Références</h2><div class="g2">${inp('N° de devis / bon de commande','refs.devis')}${inp('Date du devis','refs.devisDate','date')}${inp('Début des travaux','refs.debut','date')}${inp('Fin des travaux','refs.fin','date')}${inp('N° de facture (facultatif)','refs.facture')}</div></div>
+<div class="card sec"><h2>Intervenants</h2><div class="g2">${inp("Représentant de l'entreprise",'signEntNom')}${inp('Équipe de pose','equipe')}</div></div>`;
+ if(w.step===1)return`<div class="card"><h2>Ouvrage installé</h2><div class="chips">${Object.entries(CATS).map(([k,v])=>`<button class="chip ${w.ouvrage.cat===k?'on':''}" data-act="cat" data-v="${k}" ${lev?'disabled':''}>${v}</button>`).join('')}</div>
+<div class="g2">${inp('Marque / fabricant','ouvrage.marque','text','list="brands"')}${inp('Modèle choisi *','ouvrage.modele')}${inp('Dimensions','ouvrage.dims','text','placeholder="ex. 8,50 × 4,20 m"')}${inp('Coloris / finition','ouvrage.coloris')}${inp('N° de série / lot','ouvrage.serie')}
+<label class="f"><span>Dispositif de sécurité (loi de 2003)</span><select data-b="ouvrage.securite"><option value="">—</option>${SECU.map(s=>`<option ${w.ouvrage.securite===s?'selected':''}>${esc(s)}</option>`).join('')}</select></label></div>
+${ta('Options et équipements installés','ouvrage.options','ex. motorisation, éclairage LED, électrolyseur, escalier, volet…')}<datalist id="brands">${BRANDS.map(b=>`<option value="${esc(b)}">`).join('')}</datalist></div>`;
+ if(w.step===2&&lev)return`<div class="card"><h2>Contrôle des réserves</h2><p class="mute">Pour chaque réserve, le client constate si elle est levée.</p>${w.reserves.map((r,i)=>`<div class="res"><b>Réserve ${i+1}</b><p>${esc(r.txt)}</p>${r.delai?`<p class="mute">À lever avant le ${esc(fmtD(r.delai))}</p>`:''}<div class="chk" data-i="${i}" data-v="${r.levee?'ok':'ko'}" style="border:0;padding:4px 0"><div></div><div class="ops"><button class="op" data-act="rlev" data-v="ok">✓ Levée</button><button class="op" data-act="rlev" data-v="ko">✗ Non levée</button></div></div><label class="f"><span>Commentaire</span><input data-r="${i}" data-f="comment" value="${esc(r.comment)}"></label></div>`).join('')||'<p>Aucune réserve à lever.</p>'}</div>`;
+ if(w.step===2){const items=checklist(w.ouvrage.cat),done=items.filter(i=>w.checks[i.k]).length;const row=i=>`<div class="chk" data-k="${i.k}" data-v="${w.checks[i.k]||''}"><div>${esc(i.t)}</div><div class="ops"><button class="op" data-act="chk" data-v="ok">✓ Conforme</button><button class="op" data-act="chk" data-v="ko">✗ Réserve</button>${i.na?'<button class="op" data-act="chk" data-v="na">Sans objet</button>':''}</div></div>`;
+ return`<div class="card"><h2>Vérifications contradictoires</h2><p class="mute">Tendez la tablette au client : il valide chaque point. « Réserve » crée une réserve à préciser à l'étape suivante.</p><p><b id="cnt">${done} / ${items.length}</b> points renseignés</p><h3>Généralités</h3>${COMMON.map(row).join('')}<h3>${CATS[w.ouvrage.cat]}</h3>${(LISTS[w.ouvrage.cat]||[]).map(row).join('')}</div>`}
+ const fin=w.photos.filter(p=>p.cat==='fin');
+ const phBlock=`<div class="card sec"><h2>Photos de fin de chantier</h2><p class="mute">Vue d'ensemble, détails, abords nettoyés : prises en présence du client.</p><div class="ph">${fin.map(p=>`<div class="t"><img src="${esc(src(p))}" alt="Photo de fin de chantier"><button class="x" data-act="delWph" data-k="${esc(p.key)}" aria-label="Retirer la photo">×</button>${p.assetId?'':'<i class="up">envoi…</i>'}</div>`).join('')}${phAdd('wiz')}</div></div>
+<div class="card sec"><h2>Observations du client</h2>${ta('Observations (facultatif)','obs')}</div>`;
+ if(w.step===3&&lev)return phBlock;
+ if(w.step===3){const radio=(v,t,d)=>`<label><input type="radio" name="dec" data-b="decision" value="${v}" ${w.decision===v?'checked':''}><span><b>${t}</b><br><span class="mute">${d}</span></span></label>`;
+ const res=w.reserves.map((r,i)=>{const ph=w.photos.find(p=>p.key===r.photoKey);return`<div class="res"><div class="row" style="justify-content:space-between"><b>Réserve ${i+1}</b><button class="btn sm dang" data-act="delRes" data-i="${i}">Supprimer</button></div><label class="f"><span>Description précise</span><textarea data-r="${i}" data-f="txt">${esc(r.txt)}</textarea></label><div class="g2"><label class="f"><span>À lever avant le</span><input type="date" data-r="${i}" data-f="delai" value="${esc(r.delai)}"></label><div class="f"><span>Photo de la réserve</span><label class="btn sm">${ph?'Remplacer la photo':'Prendre une photo'}<input type="file" accept="image/*" capture="environment" data-file="res" data-i="${i}" hidden></label>${ph?`<img class="rth" src="${esc(src(ph))}" alt="Photo de la réserve ${i+1}">`:''}</div></div></div>`}).join('');
+ return`<div class="card"><h2>Décision du client</h2><div class="dec">${radio('sans','Réception sans réserve',"Tout est conforme, l'ouvrage est accepté.")}${radio('avec','Réception avec réserves',"L'ouvrage est accepté ; les défauts listés seront repris.")}${radio('refus','Refus de réception',"L'ouvrage n'est pas accepté en l'état.")}</div></div>
+${w.decision!=='sans'||w.reserves.length?`<div class="card sec"><h2>Réserves</h2>${res}<button class="btn" data-act="addRes">+ Ajouter une réserve</button></div>`:''}
+${w.decision==='refus'?`<div class="card sec">${ta('Motif du refus *','refus')}</div>`:''}${phBlock}`}
+ const items=checklist(w.ouvrage.cat),nok=items.filter(i=>w.checks[i.k]==='ok').length;
+ return`<div class="card"><h2>Récapitulatif</h2><dl class="kv"><dt>Client</dt><dd>${esc(fullName(c))}</dd><dt>Ouvrage</dt><dd>${esc([CATS[w.ouvrage.cat],w.ouvrage.marque,w.ouvrage.modele,w.ouvrage.dims].filter(Boolean).join(' · '))}</dd>${lev?'':`<dt>Vérifications</dt><dd>${nok} conformes sur ${items.length}</dd>`}<dt>Réserves</dt><dd>${lev?`${w.reserves.filter(r=>r.levee).length} levée(s) sur ${w.reserves.length}`:w.reserves.length||'Aucune'}</dd><dt>Photos</dt><dd>${w.photos.length}</dd></dl><p class="row" style="margin-top:10px"><button class="lnk" data-act="goto" data-s="0">Modifier une étape</button></p></div>
+<div class="card sec"><h2>Déclaration</h2><p><b>${esc(declaration(w))}</b></p><div class="legal">${legal(w).map(p=>`<p>${esc(p)}</p>`).join('')}</div></div>
+<div class="card sec"><h2>Signatures</h2><div class="g2"><div>${inp('Nom du client signataire *','signClientNom')}<div class="sigbox ${w.sigC?'has':''}"><canvas id="sigC" aria-label="Signature du client"></canvas></div><button class="btn sm" data-act="clearSig" data-k="sigC">Effacer</button></div>
+<div>${inp("Représentant de l'entreprise *",'signEntNom')}<div class="sigbox ${w.sigE?'has':''}"><canvas id="sigE" aria-label="Signature de l'entreprise"></canvas></div><button class="btn sm" data-act="clearSig" data-k="sigE">Effacer</button></div></div>
+<label class="acc"><input type="checkbox" data-b="accept" ${w.accept?'checked':''}> Le client déclare avoir lu le présent procès-verbal, en accepter les termes, et recevra une copie PDF.</label></div>`}
+function vWiz(){const w=S.wiz,c=client(w.clientId),L=STEPS[w.type];
+ return`<button class="lnk" data-act="quitWiz">← Quitter (le brouillon est conservé sur cet appareil)</button><h1>${w.type==='levee'?'PV de levée des réserves':'PV de réception'}</h1><p class="mute">${esc(fullName(c))} · ${esc(w.ref)}</p>
+<div class="steps">${L.map((s,i)=>`<div class="${i===w.step?'on':i<w.step?'done':''}">${s}</div>`).join('')}</div><div id="werr"></div>${stepBody()}
+<div class="wbar">${w.step?'<button class="btn" data-act="prev">← Précédent</button>':'<span></span>'}${w.step<4?'<button class="btn pri" data-act="next">Suivant →</button>':'<button class="btn gold" data-act="finalize">Signer et enregistrer le PV</button>'}</div>`}
+function vDone(){const l=S.last,c=client(l?.cid);
+ return`<div class="card" style="text-align:center;padding:28px 18px"><svg width="64" height="64" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="30" fill="#17794a"/><path d="M19 33l9 9 17-19" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg><h1 style="margin-top:12px">PV signé et classé</h1><p class="mute">${esc(l?.ref)} · dossier de ${esc(fullName(c))}</p>
+<div class="row" style="justify-content:center;margin:16px 0">${navigator.canShare?`<button class="btn gold" data-act="shareLast">Envoyer au client</button>`:''}<button class="btn pri" data-act="dlLast">Télécharger le PDF</button><a class="btn" href="${esc(l?.pdfId)}" target="_blank" rel="noopener">Voir le PDF</a><button class="btn" data-act="open" data-id="${esc(l?.cid)}">Ouvrir le dossier</button></div>
+${c?.email?`<p class="note" style="text-align:left">Pensez à envoyer la copie au client : téléchargez le PDF puis joignez-le à un e-mail à <b>${esc(c.email)}</b>.</p>`:''}</div>`}
+
+function render(){const v=S.view;$('#nav').hidden=!S.member;app.innerHTML=v==='loading'?vLoading():v==='login'?vLogin():v==='denied'?vDenied():v==='home'?vHome():v==='client'?vClient():v==='cform'?vCForm():v==='settings'?vSettings():v==='wiz'?vWiz():vDone();if(v==='wiz')afterWiz()}
+function go(v,x){Object.assign(S,x||{});S.view=v;render();window.scrollTo(0,0)}
+function soft(){if(S.view==='home'){const l=$('#clist');if(l&&document.activeElement?.id==='q'){l.innerHTML=listHtml()}else render()}else if(S.view==='client'&&!['notes'].includes(document.activeElement?.id))render()}
+function openClient(id){S.unF?.();S.files=[];S.cid=id;
+ if(S.db)S.unF=S.db.collection('files').where('clientId','==',id).onSnapshot(s=>{S.files=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.createdAt||'').localeCompare(b.createdAt||''));soft()},()=>{});
+ go('client')}
+
+/* ---------- signature ---------- */
+function pad(cv,key){if(!cv)return;const r=cv.getBoundingClientRect(),d=window.devicePixelRatio||1;cv.width=Math.round(r.width*d);cv.height=Math.round(r.height*d);
+ const x=cv.getContext('2d');x.scale(d,d);x.fillStyle='#fff';x.fillRect(0,0,r.width,r.height);x.lineWidth=2.4;x.lineCap='round';x.lineJoin='round';x.strokeStyle='#0f1d30';
+ if(S.wiz[key]){const i=new Image();i.onload=()=>x.drawImage(i,0,0,r.width,r.height);i.src=S.wiz[key]}
+ let on=false,lx=0,ly=0;const pos=e=>{const b=cv.getBoundingClientRect();return{x:e.clientX-b.left,y:e.clientY-b.top}};
+ cv.onpointerdown=e=>{e.preventDefault();on=true;try{cv.setPointerCapture(e.pointerId)}catch(_){}const p=pos(e);lx=p.x;ly=p.y;x.beginPath();x.arc(lx,ly,1.2,0,7);x.fillStyle='#0f1d30';x.fill()};
+ cv.onpointermove=e=>{if(!on)return;const p=pos(e);x.beginPath();x.moveTo(lx,ly);x.lineTo(p.x,p.y);x.stroke();lx=p.x;ly=p.y};
+ const end=()=>{if(!on)return;on=false;S.wiz[key]=cv.toDataURL('image/png');S.wiz[key==='sigC'?'rC':'rE']=r.width/r.height;cv.parentElement.classList.add('has');saveDraft()};
+ cv.onpointerup=end;cv.onpointercancel=end;cv.onpointerleave=end}
+function afterWiz(){if(S.wiz?.step===4){pad($('#sigC'),'sigC');pad($('#sigE'),'sigE')}}
+let rz;addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(()=>{if(S.view==='wiz')afterWiz()},250)});
+
+function validate(){const w=S.wiz,lev=w.type==='levee';
+ if(w.step===0&&!w.date)return'Indiquez la date de réception.';
+ if(w.step===1&&!String(w.ouvrage.modele).trim())return'Indiquez le modèle installé.';
+ if(w.step===2&&!lev){const n=checklist(w.ouvrage.cat).filter(i=>!w.checks[i.k]).length;if(n)return`Il reste ${n} point(s) à vérifier avec le client.`}
+ if(w.step===3&&!lev){if(w.decision==='sans'&&w.reserves.length)return'Des réserves sont listées : choisissez « avec réserves » ou supprimez-les.';
+  if(w.decision==='avec'&&!w.reserves.length)return'Ajoutez au moins une réserve, ou choisissez « sans réserve ».';
+  if(w.reserves.some(r=>!String(r.txt).trim()||/à préciser$/.test(r.txt)))return'Décrivez précisément chaque réserve.';
+  if(w.decision==='refus'&&!String(w.refus).trim())return'Indiquez le motif du refus.'}
+ if(w.step===4){if(!String(w.signClientNom).trim()||!String(w.signEntNom).trim())return'Indiquez le nom des deux signataires.';if(!w.sigC||!w.sigE)return'Les deux signatures sont nécessaires.';if(!w.accept)return'Le client doit cocher la case de lecture et d’acceptation.'}
+ return''}
+function showErr(m){const e=$('#werr');e.innerHTML=m?`<p class="err">${esc(m)}</p>`:'';if(m)e.scrollIntoView({behavior:'smooth',block:'center'})}
+
+/* ---------- PDF ---------- */
+function buildPdf(pv,photos){const{jsPDF}=window.jspdf;const doc=new jsPDF({unit:'mm',format:'a4'});const cfg=pv.entreprise,c=pv.client;
+ const W=210,M=15,CW=W-2*M,NAVY=[19,51,94],SAND=[201,164,92],GREY=[90,100,115],INK=[20,28,40];let y=0;
+ const T=s=>String(s??'').replace(/œ/g,'oe').replace(/Œ/g,'OE').replace(/[’‘]/g,"'").replace(/[“”]/g,'"').replace(/…/g,'...').replace(/[–—]/g,'-').replace(/[  ]/g,' ').replace(/€/g,'EUR').replace(/✓/g,'').replace(/[^\x00-\xff]/g,'');
+ const need=h=>{if(y+h>297-20){doc.addPage();y=M}};
+ const para=(s,sz=9.5,col=INK,b=false,ind=0)=>{doc.setFont('helvetica',b?'bold':'normal');doc.setFontSize(sz);doc.setTextColor(...col);for(const l of doc.splitTextToSize(T(s),CW-ind)){need(sz*.42);doc.text(l,M+ind,y+sz*.34);y+=sz*.42}y+=1.2};
+ const kv=(k,v)=>{doc.setFont('helvetica','normal');doc.setFontSize(9.5);const ls=doc.splitTextToSize(T(v||'-'),CW-50);const h=ls.length*4+1;need(h);doc.setFont('helvetica','bold');doc.setTextColor(...GREY);doc.text(T(k),M,y+3.3);doc.setFont('helvetica','normal');doc.setTextColor(...INK);doc.text(ls,M+50,y+3.3);y+=h};
+ const sec=t=>{need(14);y+=3;doc.setFillColor(...NAVY);doc.rect(M,y,CW,7,'F');doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(255,255,255);doc.text(T(t),M+2.5,y+4.9);y+=10};
+ const box=(v)=>{doc.setDrawColor(...GREY);doc.setLineWidth(.3);doc.rect(M,y+.6,3.4,3.4);doc.setLineWidth(.6);
+  if(v==='ok'){doc.setDrawColor(23,121,74);doc.line(M+.6,y+2.4,M+1.5,y+3.4);doc.line(M+1.5,y+3.4,M+3,y+1.1)}
+  if(v==='ko'){doc.setDrawColor(179,38,30);doc.line(M+.7,y+1.2,M+2.7,y+3.4);doc.line(M+2.7,y+1.2,M+.7,y+3.4)}};
+ const chk=(t,v,labs)=>{doc.setFont('helvetica','normal');doc.setFontSize(9);const ls=doc.splitTextToSize(T(t),CW-32);const h=ls.length*3.8+1.8;need(h);box(v);doc.setTextColor(...INK);doc.text(ls,M+6,y+3.2);
+  doc.setFont('helvetica','bold');doc.setTextColor(...(v==='ok'?[23,121,74]:v==='ko'?[179,38,30]:GREY));doc.text(T(labs[v]||'Non renseigné'),W-M,y+3.2,{align:'right'});y+=h};
+ // en-tête
+ doc.setFillColor(...NAVY);doc.rect(0,0,W,31,'F');doc.setFillColor(...SAND);doc.rect(0,31,W,1.4,'F');
+ if(LOGO)try{doc.addImage(LOGO,'PNG',M,5,21,21)}catch(e){}const HX=LOGO?M+25:M;doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(15);doc.text(T(cfg.raison||'Entreprise'),HX,12);
+ doc.setFont('helvetica','normal');doc.setFontSize(8);
+ [cfg.forme,cfg.adresse,[cfg.siret&&('SIRET '+cfg.siret),cfg.tel,cfg.email,cfg.site].filter(Boolean).join(' - '),cfg.assureur?('Assurance décennale / RC pro : '+cfg.assureur+(cfg.police?' - police n° '+cfg.police:'')):''].filter(Boolean).forEach((l,i)=>doc.text(T(l).slice(0,125),HX,16.6+i*3.7));
+ doc.setFont('helvetica','bold');doc.setFontSize(10);doc.text(T(pv.ref),W-M,12,{align:'right'});doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.text(T('Établi le '+fmtD(pv.date)),W-M,17,{align:'right'});
+ y=41;doc.setTextColor(...NAVY);doc.setFont('helvetica','bold');doc.setFontSize(16);doc.text(T(pv.type==='levee'?'Procès-verbal de levée des réserves':'Procès-verbal de réception des travaux'),M,y);y+=5;
+ doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(...GREY);doc.text(T(pv.type==='levee'?'Suite au PV de réception n° '+pv.parentRef:'Article 1792-6 du Code civil - réception contradictoire'),M,y);y+=4;
+ sec('1. Les parties');
+ kv("Entreprise",[cfg.raison,cfg.adresse].filter(Boolean).join(' - '));kv("Représentée par",pv.signEntNom);if(pv.equipe)kv("Équipe de pose",pv.equipe);
+ kv("Maître de l'ouvrage",[fullName(c),c.societe].filter(Boolean).join(' - '));kv("Adresse",addr(c));kv("Téléphone / e-mail",[c.tel,c.email].filter(Boolean).join(' - '));kv("Adresse du chantier",chAddr(c));
+ sec('2. Références du chantier');
+ kv("Devis / bon de commande",[pv.refs.devis,pv.refs.devisDate&&('du '+fmtD(pv.refs.devisDate))].filter(Boolean).join(' '));if(pv.refs.facture)kv("Facture",pv.refs.facture);
+ kv("Travaux",[pv.refs.debut&&('du '+fmtD(pv.refs.debut)),pv.refs.fin&&('au '+fmtD(pv.refs.fin))].filter(Boolean).join(' '));kv("Réception",`le ${fmtD(pv.date)} à ${pv.lieu||'-'}`);
+ sec('3. Ouvrage réceptionné');const o=pv.ouvrage;
+ kv("Nature",CATS[o.cat]);kv("Marque / fabricant",o.marque);kv("Modèle",o.modele);if(o.dims)kv("Dimensions",o.dims);if(o.coloris)kv("Coloris / finition",o.coloris);if(o.serie)kv("N° de série / lot",o.serie);if(o.options)kv("Options et équipements",o.options);if(o.securite)kv("Dispositif de sécurité",o.securite);
+ if(pv.type==='reception'){sec('4. Vérifications contradictoires (cochées par le maître de l\'ouvrage)');const L={ok:'Conforme',ko:'Réserve',na:'Sans objet'};for(const i of checklist(o.cat))chk(i.t,pv.checks[i.k],L)}
+ else{sec('4. Contrôle des réserves');pv.reserves.forEach((r,i)=>chk(`Réserve ${i+1} : ${r.txt}${r.comment?' - '+r.comment:''}`,r.levee?'ok':'ko',{ok:'Levée',ko:'Non levée'}))}
+ sec('5. Décision');need(16);const dy=y;doc.setDrawColor(...SAND);doc.setLineWidth(.8);y+=3;para(pv.declaration,10,INK,true,4);if(pv.decision==='refus'&&pv.refus)para('Motif du refus : '+pv.refus,9.5,INK,false,4);y+=1;doc.line(M,dy,M,y);
+ if(pv.type==='reception'&&pv.reserves.length){sec('6. Réserves');pv.reserves.forEach((r,i)=>{para(`${i+1}. ${r.txt}`,9.5,INK,true);para(`À lever avant le : ${r.delai?fmtD(r.delai):'délai à convenir'}${r.photoKey?' - photo en annexe':''}`,8.8,GREY)})}
+ if(pv.obs){sec('Observations du maître de l\'ouvrage');para(pv.obs)}
+ sec('Mentions');legal(pv).forEach(p=>para(p,8.3,GREY));
+ // signatures
+ need(62);y+=4;const bw=(CW-6)/2;
+ [[`Le maître de l'ouvrage`,pv.signClientNom,pv.sigCData,pv.rC],[`Pour l'entreprise`,pv.signEntNom,pv.sigEData,pv.rE]].forEach(([t,n,img,r],k)=>{const x=M+k*(bw+6);
+  doc.setDrawColor(...GREY);doc.setLineWidth(.3);doc.rect(x,y,bw,52);doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(...NAVY);doc.text(T(t),x+3,y+5);
+  doc.setFont('helvetica','normal');doc.setTextColor(...INK);doc.text(T(n),x+3,y+9.5);doc.setFontSize(7.8);doc.setTextColor(...GREY);doc.text(T('Lu et approuvé - signé le '+fmtDT(pv.signedAt)),x+3,y+13.5);
+  if(img){let iw=bw-6,ih=iw/(r||2.4);if(ih>34){ih=34;iw=ih*(r||2.4)}doc.addImage(img,'PNG',x+3,y+16,iw,ih)}});
+ y+=56;para(`Horodatage : ${pv.signedAt} - Appareil : ${pv.ua}`,7,GREY);
+ // annexe photos
+ if(photos.length){doc.addPage();y=M;doc.setTextColor(...NAVY);doc.setFont('helvetica','bold');doc.setFontSize(13);doc.text(T('Annexe - Photos'),M,y+4);y+=10;const cw=(CW-6)/2,chh=62;let col=0;
+  for(const p of photos){if(col===0)need(chh+8);const x=M+col*(cw+6);let iw=cw,ih=cw*(p.h||3)/(p.w||4);if(ih>chh){ih=chh;iw=chh*(p.w||4)/(p.h||3)}
+   try{doc.addImage(p.dataUrl,'JPEG',x+(cw-iw)/2,y,iw,ih)}catch(e){}doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(...GREY);doc.text(T(p.caption),x,y+chh+4);
+   col=1-col;if(col===0)y+=chh+9}}
+ const n=doc.getNumberOfPages();for(let i=1;i<=n;i++){doc.setPage(i);doc.setDrawColor(...SAND);doc.setLineWidth(.4);doc.line(M,283,W-M,283);doc.setFont('helvetica','normal');doc.setFontSize(7.3);doc.setTextColor(...GREY);
+  doc.text(T(`${pv.ref} - ${fullName(c)}`),M,287);doc.text(`Page ${i}/${n}`,W-M,287,{align:'right'});doc.text(T('Empreinte des données (SHA-256) : '+pv.dataHash),M,291)}
+ return doc.output('blob')}
+
+async function finalize(){const w=S.wiz,err=validate();if(err)return showErr(err);
+ if(!S.assets)return showErr("Votre accès ne permet pas d'enregistrer de fichiers. Ouvrez l'application avec le compte propriétaire.");
+ if(!window.jspdf)return showErr("Le générateur PDF n'a pas pu se charger : vérifiez la connexion puis réessayez.");
+ const c=client(w.clientId);busy('Envoi des photos…');
+ try{for(const p of w.photos){if(!p.dataUrl&&p.assetId){try{p.dataUrl=await b2d(await getBlob(p.assetId))}catch(_){}}if(!p.assetId)p.assetId=await up(d2b(p.dataUrl),'image/jpeg')}
+  busyMsg('Enregistrement des signatures…');const sigC=await up(d2b(w.sigC),'image/png'),sigE=await up(d2b(w.sigE),'image/png');
+  const signedAt=new Date().toISOString();
+  const resPh=w.reserves.map((r,i)=>[r,i]).filter(([r])=>r.photoKey).map(([r,i])=>({...w.photos.find(p=>p.key===r.photoKey),caption:`Réserve n° ${i+1}`})).filter(p=>p.dataUrl);
+  const finPh=w.photos.filter(p=>p.cat==='fin').map(p=>({...p,caption:'Fin de chantier'}));
+  const core={ref:w.ref,type:w.type,parentId:w.parentId,parentRef:w.parentRef,clientId:w.clientId,date:w.date,lieu:w.lieu,refs:w.refs,ouvrage:w.ouvrage,equipe:w.equipe,checks:w.checks,
+   decision:w.decision,reserves:w.reserves.map(r=>({txt:r.txt,delai:r.delai||'',levee:!!r.levee,comment:r.comment||'',photoKey:r.photoKey||null})),refus:w.refus,obs:w.obs,
+   signClientNom:w.signClientNom,signEntNom:w.signEntNom,signedAt,ua:navigator.userAgent.slice(0,150),entreprise:{...S.cfg},
+   client:Object.fromEntries(['civ','nom','prenom','societe','tel','email','adresse','cp','ville','idem','chAdresse','chCp','chVille'].map(k=>[k,c?.[k]??''])),sigClientAssetId:sigC,sigEntAssetId:sigE};
+  core.declaration=declaration(w);core.dataHash=await sha256(new TextEncoder().encode(JSON.stringify(core)));
+  busyMsg('Génération du PDF…');const pdf=buildPdf({...core,sigCData:w.sigC,sigEData:w.sigE,rC:w.rC,rE:w.rE},[...resPh,...finPh]);
+  const pdfSha=await sha256(await pdf.arrayBuffer());busyMsg('Classement dans le dossier…');const pdfId=await up(pdf,'application/pdf');
+  const open=w.type==='levee'?core.reserves.some(r=>!r.levee):(w.decision==='avec'&&core.reserves.length>0);
+  await S.db.doc('pvs/'+w.pvId).set({...core,pdfAssetId:pdfId,pdfSha,photoIds:w.photos.map(p=>p.assetId),reservesOuvertes:open,createdAt:signedAt});
+  for(const p of w.photos)await S.db.doc('files/f'+uid()).set({clientId:w.clientId,pvId:w.pvId,kind:'photo',cat:p.cat,name:p.name||'photo.jpg',assetId:p.assetId,contentType:'image/jpeg',caption:p.cat==='reserve'?'Réserve':'',createdAt:signedAt});
+  if(w.parentId)await S.db.doc('pvs/'+w.parentId).update({reservesOuvertes:false,suiviPar:w.pvId});
+  await S.db.doc('clients/'+w.clientId).update({updatedAt:signedAt,produit:[CATS[w.ouvrage.cat],w.ouvrage.marque,w.ouvrage.modele].filter(Boolean).join(' ')});
+  clearDraft(w.clientId);S.last={cid:w.clientId,ref:w.ref,pdf,pdfId,fn:`${w.ref}_${safe(c?.nom)}.pdf`};S.wiz=null;closeModal();go('done')}
+ catch(e){closeModal();saveDraftNow();showErr('Enregistrement interrompu ('+(e.code||e.message||'erreur')+'). Le brouillon est conservé : vérifiez la connexion et appuyez à nouveau sur « Signer et enregistrer ».')}}
+
+function save(fn,data){const a=document.createElement('a');a.href=URL.createObjectURL(data instanceof Blob?data:new Blob([data]));a.download=fn;document.body.append(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},2000)}
+async function exportZip(){const c=client(S.cid);if(!c)return;if(!window.JSZip)return toast("L'export n'a pas pu se charger, vérifiez la connexion.");busy('Préparation du dossier…');
+ try{const z=new JSZip(),pvs=S.pvs.filter(p=>p.clientId===c.id);
+  z.file('Fiche_client.txt',[`Client : ${fullName(c)}`,c.societe&&`Société : ${c.societe}`,`Téléphone : ${c.tel||''}`,`E-mail : ${c.email||''}`,`Adresse : ${addr(c)}`,`Chantier : ${chAddr(c)}`,c.produit&&`Produit : ${c.produit}`,c.commercial&&`Commercial : ${c.commercial}`,'',`PV : ${pvs.map(p=>`${p.ref} (${decLabel(p)}, signé le ${fmtDT(p.signedAt)}, SHA-256 du PDF : ${p.pdfSha})`).join('\n     ')||'aucun'}`,'','Notes :',c.notes||''].filter(v=>typeof v==='string').join('\n'));
+  for(const p of pvs){busyMsg('PV '+p.ref+'…');z.file(`PV/${p.ref}.pdf`,await getBlob(p.pdfAssetId))}
+  let n=0;for(const f of S.files){n++;busyMsg(`Fichiers ${n}/${S.files.length}…`);const b=await getBlob(f.assetId);
+   if(f.kind==='photo')z.file(`Photos/${safe(PHOTO_CATS[f.cat])}/${(f.createdAt||'').slice(0,10)}_${n}.jpg`,b);else z.file(`Documents/${safe(DOC_CATS[f.cat])}/${n}_${safe(f.name.replace(/\.[^.]+$/,''))}.${f.contentType==='application/pdf'?'pdf':'jpg'}`,b)}
+  busyMsg('Compression…');const out=await z.generateAsync({type:'blob'});closeModal();await save(`Dossier_${safe(c.nom)}_${safe(c.prenom)}.zip`,out)}
+ catch(e){closeModal();toast('Export interrompu : '+(e.message||e.code)+'. Voir la note « Export » dans le guide.')}}
+
+async function addFiles(files,kind,cat){if(!S.assets)return toast('Ajout de fichiers non autorisé pour ce compte.');busy('Envoi…');let ok=0;
+ try{for(const f of files){busyMsg(`Envoi ${ok+1}/${files.length}…`);let id,type,size;
+  if(f.type.startsWith('image/')){const r=await compress(f);id=await up(r.blob,'image/jpeg');type='image/jpeg';size=r.blob.size}
+  else if(f.type==='application/pdf'||/\.pdf$/i.test(f.name)){id=await up(f,'application/pdf');type='application/pdf';size=f.size}else continue;
+  await S.db.doc('files/f'+uid()).set({clientId:S.cid,kind,cat,name:f.name||'fichier',assetId:id,contentType:type,size,createdAt:new Date().toISOString()});ok++}
+  await S.db.doc('clients/'+S.cid).update({updatedAt:new Date().toISOString()});closeModal();toast(`${ok} fichier(s) ajouté(s) au dossier.`)}
+ catch(e){closeModal();toast('Envoi interrompu : '+(e.code||e.message)+(e.code==='too_large'?' (20 Mo maximum)':''))}}
+async function addWizPhotos(files,resIdx){const w=S.wiz;for(const f of files){try{const r=await compress(f);const p={key:'p'+uid(),dataUrl:r.dataUrl,w:r.w,h:r.h,cat:resIdx!=null?'reserve':'fin',name:f.name,assetId:null};
+  if(resIdx!=null){const res=w.reserves[resIdx];if(res.photoKey)w.photos=w.photos.filter(x=>x.key!==res.photoKey);res.photoKey=p.key}
+  w.photos.push(p);render();if(S.assets)up(r.blob,'image/jpeg').then(id=>{p.assetId=id;saveDraft();const i=document.querySelector(`[data-k="${p.key}"]`)?.parentElement?.querySelector('.up');i?.remove()}).catch(()=>{})}catch(e){toast('Photo illisible : '+(f.name||''))}}saveDraft()}
+
+/* ---------- actions ---------- */
+const A={
+ home:()=>{S.unF?.();S.unF=null;go('home')},settings:()=>go('settings'),back:()=>go('client'),
+ newClient:()=>go('cform',{edit:null}),editClient:()=>go('cform',{edit:S.cid}),open:a=>openClient(a.dataset.id),
+ newPv:()=>{const d=loadDraft(S.cid);if(d&&d.type){modal(`<h2>Un PV est en cours</h2><p>Brouillon ${esc(d.ref)} enregistré le ${esc(fmtDT(d.saved))}, à l'étape « ${esc(STEPS[d.type][d.step])} ».</p><div class="row"><button class="btn pri" data-act="resume">Reprendre</button><button class="btn" data-act="restart">Recommencer</button></div>`)}else{S.wiz=newWiz(S.cid,'reception');go('wiz')}},
+ resume:()=>{S.wiz=loadDraft(S.cid);closeModal();go('wiz')},restart:()=>{clearDraft(S.cid);closeModal();S.wiz=newWiz(S.cid,'reception');go('wiz')},
+ levee:a=>{const p=S.pvs.find(x=>x.id===a.dataset.id);if(!p)return;S.wiz=newWiz(p.clientId,'levee',p);go('wiz')},
+ quitWiz:()=>{saveDraftNow();const id=S.wiz.clientId;S.wiz=null;openClient(id)},
+ next:()=>{const e=validate();if(e)return showErr(e);const w=S.wiz;w.step++;if(w.step===3&&w.type==='reception'&&w.reserves.length&&w.decision==='sans')w.decision='avec';saveDraftNow();render();window.scrollTo(0,0)},
+ prev:()=>{S.wiz.step--;render();window.scrollTo(0,0)},goto:a=>{S.wiz.step=+a.dataset.s;render();window.scrollTo(0,0)},
+ cat:a=>{S.wiz.ouvrage.cat=a.dataset.v;saveDraft();render()},
+ chk:a=>{const row=a.closest('.chk'),k=row.dataset.k,v=a.dataset.v,w=S.wiz;w.checks[k]=v;row.dataset.v=v;const it=checklist(w.ouvrage.cat).find(i=>i.k===k);
+  if(v==='ko'&&!w.reserves.some(r=>r.key===k)){w.reserves.push({key:k,txt:it.t.replace(/^Je ne constate aucun |^Aucun /,'')+' — à préciser',delai:''});toast('Réserve ajoutée : à préciser à l’étape suivante.')}
+  if(v!=='ko')w.reserves=w.reserves.filter(r=>!(r.key===k&&/à préciser$/.test(r.txt)));
+  const items=checklist(w.ouvrage.cat);$('#cnt').textContent=`${items.filter(i=>w.checks[i.k]).length} / ${items.length}`;saveDraft()},
+ rlev:a=>{const row=a.closest('.chk');S.wiz.reserves[+row.dataset.i].levee=a.dataset.v==='ok';row.dataset.v=a.dataset.v;saveDraft()},
+ addRes:()=>{S.wiz.reserves.push({txt:'',delai:''});render()},delRes:a=>{const w=S.wiz,r=w.reserves[+a.dataset.i];if(r?.photoKey)w.photos=w.photos.filter(p=>p.key!==r.photoKey);w.reserves.splice(+a.dataset.i,1);saveDraft();render()},
+ delWph:a=>{S.wiz.photos=S.wiz.photos.filter(p=>p.key!==a.dataset.k);saveDraft();render()},
+ clearSig:a=>{S.wiz[a.dataset.k]=null;saveDraft();const cv=$('#'+a.dataset.k);cv.parentElement.classList.remove('has');pad(cv,a.dataset.k)},
+ finalize:()=>finalize(),dlLast:()=>S.last&&save(S.last.fn,S.last.pdf),
+ shareLast:async()=>{const l=S.last;if(!l)return;const f=new File([l.pdf],l.fn,{type:'application/pdf'});if(!navigator.canShare?.({files:[f]}))return toast('Partage indisponible : téléchargez le PDF puis envoyez-le.');try{await navigator.share({files:[f],title:'Procès-verbal '+l.ref,text:'Bonjour, veuillez trouver ci-joint le procès-verbal de réception de vos travaux. Cordialement, '+(S.cfg.raison||'')})}catch(e){}},
+ logout:()=>signOut(auth),install:async()=>{if(!S.ip)return;S.ip.prompt();S.ip=null;render()},
+ reset:async()=>{const m=$('#lmail')?.value.trim();if(!m)return toast('Entrez d\u2019abord votre e-mail.');try{await sendPasswordResetEmail(auth,m);toast('E-mail de réinitialisation envoyé.')}catch(e){toast('Envoi impossible : '+(e.code||''))}},
+ addMember:async()=>{const m=$('#mmail').value.trim().toLowerCase(),r=$('#mrole').value;if(!/^\S+@\S+\.\S+$/.test(m))return toast('E-mail invalide.');try{await S.db.doc('membres/'+m).set({role:r,ajoutePar:S.user.email,createdAt:new Date().toISOString()});$('#mmail').value='';toast('Accès ajouté. Créez son compte dans Firebase → Authentication.')}catch(e){toast('Ajout impossible : '+(e.code||''))}},
+ delMember:async a=>{if(a.dataset.id===S.user.email.toLowerCase())return toast('Vous ne pouvez pas retirer votre propre accès.');try{await S.db.doc('membres/'+a.dataset.id).delete();toast('Accès retiré.')}catch(e){toast('Suppression impossible.')}},
+ dlPv:async a=>{const p=S.pvs.find(x=>x.id===a.dataset.id);if(!p)return;try{save(`${p.ref}_${safe(p.client?.nom)}.pdf`,await getBlob(p.pdfAssetId))}catch(e){window.open(p.pdfAssetId,'_blank','noopener')}},
+ dlFile:async a=>{const f=S.files.find(x=>x.id===a.dataset.id);if(!f)return;try{save(f.kind==='photo'?`photo_${(f.createdAt||'').slice(0,10)}.jpg`:f.name,await getBlob(f.assetId))}catch(e){window.open(f.assetId,'_blank','noopener')}},
+ photo:a=>{const f=S.files.find(x=>x.id===a.dataset.id);if(!f)return;const pv=f.pvId&&S.pvs.find(p=>p.id===f.pvId);
+  modal(`<img src="${esc(f.assetId)}" alt=""><p><b>${esc(PHOTO_CATS[f.cat]||'Photo')}</b> · ${esc(fmtDT(f.createdAt))}${pv?` · jointe au ${esc(pv.ref)}`:''}</p><div class="row"><button class="btn sm" data-act="dlFile" data-id="${esc(f.id)}">Télécharger</button>${!f.pvId&&S.assets?`<button class="btn sm dang" data-act="delFile" data-id="${esc(f.id)}">Supprimer</button>`:''}<button class="btn sm" data-act="closeModal">Fermer</button></div>${f.pvId?'<p class="mute" style="margin-top:10px">Photo annexée à un PV signé : conservée comme preuve, elle ne peut pas être supprimée.</p>':''}`)},
+ delFile:a=>modal(`<h2>Supprimer ce fichier ?</h2><p>Il sera retiré du dossier et effacé définitivement.</p><div class="row"><button class="btn dang" data-act="delOk" data-id="${esc(a.dataset.id)}">Supprimer définitivement</button><button class="btn" data-act="closeModal">Annuler</button></div>`),
+ delOk:async a=>{const f=S.files.find(x=>x.id===a.dataset.id);closeModal();if(!f||f.pvId)return;try{await S.db.doc('files/'+f.id).delete();await S.assets.delete(f.assetId).catch(()=>{});toast('Fichier supprimé.')}catch(e){toast('Suppression impossible.')}},
+ closeModal:()=>closeModal(),zip:()=>exportZip(),
+ saveNotes:async()=>{try{await S.db.doc('clients/'+S.cid).update({notes:$('#notes').value,updatedAt:new Date().toISOString()});toast('Notes enregistrées.')}catch(e){toast('Enregistrement impossible.')}}};
+
+document.addEventListener('click',e=>{const a=e.target.closest('[data-act]');if(!a||a.disabled)return;if(a.tagName==='A')return;const f=A[a.dataset.act];if(f){e.preventDefault();f(a,e)}});
+$('#modal').addEventListener('click',e=>{if(e.target.id==='modal'&&!$('#bmsg'))closeModal()});
+document.addEventListener('input',e=>{const el=e.target;
+ if(el.id==='q'){S.q=el.value;$('#clist').innerHTML=listHtml();return}
+ if(el.name==='idem'){const z=$('#chz');if(z)z.hidden=el.checked;return}
+ if(S.view!=='wiz'||!S.wiz)return;
+ if(el.dataset.b){if(el.type==='radio'&&!el.checked)return;setP(S.wiz,el.dataset.b,el.type==='checkbox'?el.checked:el.value);saveDraft();if(el.dataset.b==='decision')render()}
+ else if(el.dataset.r!=null){const r=S.wiz.reserves[+el.dataset.r];if(r){r[el.dataset.f]=el.value;saveDraft()}}});
+document.addEventListener('change',e=>{const el=e.target,k=el.dataset.file;if(!k)return;const files=[...el.files];el.value='';if(!files.length)return;
+ if(k==='wiz')addWizPhotos(files,null);else if(k==='res')addWizPhotos(files.slice(0,1),+el.dataset.i);
+ else if(k==='cphoto')addFiles(files,'photo',$('#pcat').value);else if(k==='cdoc')addFiles(files,'doc',$('#dcat').value)});
+document.addEventListener('submit',async e=>{e.preventDefault();const f=e.target;if(f.id==='lf')return login(f);if(!S.db)return toast('Connexion requise.');
+ try{if(f.id==='cf'){const d=Object.fromEntries(new FormData(f));d.idem=f.idem.checked;if(!String(d.nom).trim())return toast('Le nom est obligatoire.');const now=new Date().toISOString();
+   if(S.edit){await S.db.doc('clients/'+S.edit).update({...d,updatedAt:now});toast('Client mis à jour.');go('client')}
+   else{const id='c'+uid();await S.db.doc('clients/'+id).set({...d,notes:'',createdAt:now,updatedAt:now});toast('Dossier client créé.');openClient(id)}}
+  if(f.id==='sf'){await S.db.doc('config/entreprise').set(Object.fromEntries(new FormData(f)));toast('Informations entreprise enregistrées.');go('home')}}
+ catch(err){toast('Enregistrement impossible : '+(err.code||err.message))}});
+
+
+/* ---------- Firebase : adaptateurs ---------- */
+const wrapDoc=d=>({id:d.id,exists:d.exists(),data:()=>d.data(),metadata:d.metadata});
+const wrapQ=q=>({docs:q.docs.map(wrapDoc),size:q.size,empty:q.empty,metadata:q.metadata});
+const subs=[];
+function mkDoc(p){const r=doc(fdb,p);return{set:d=>setDoc(r,d),update:d=>updateDoc(r,d),delete:()=>deleteDoc(r),get:async()=>wrapDoc(await getDoc(r)),
+ onSnapshot:(n,e)=>{const u=onSnapshot(r,{includeMetadataChanges:true},x=>n(wrapDoc(x)),e);subs.push(u);return u}}}
+function mkQ(q){return{where:(f,o,v)=>mkQ(query(q,where(f,o,v))),onSnapshot:(n,e)=>{const u=onSnapshot(q,{includeMetadataChanges:true},x=>n(wrapQ(x)),e);subs.push(u);return u}}}
+const DB={doc:mkDoc,collection:p=>mkQ(collection(fdb,p))};
+const EXT={'image/jpeg':'jpg','image/png':'png','application/pdf':'pdf'};
+const ASSETS={async upload(blob,{type}){const r=ref(fst,`fichiers/${new Date().toISOString().slice(0,7)}/${uid()}.${EXT[type]||'bin'}`);await uploadBytes(r,blob,{contentType:type});return{id:await getDownloadURL(r)}},
+ delete:id=>deleteObject(ref(fst,id))};
+function stopAll(){while(subs.length){try{subs.pop()()}catch(e){}}S.unF=null}
+
+/* ---------- connexion ---------- */
+function vLoading(){return`<div class="empty"><div class="spin"></div>Chargement…</div>`}
+function vLogin(){return`<div class="card" style="max-width:440px;margin:6vh auto 0"><img src="${esc($('.logo').src)}" alt="" width="64" height="64" style="border-radius:14px;display:block;margin-bottom:12px"><h1>Connexion</h1><p class="mute">Réceptions chantier · Alberka Piscine</p>
+<form id="lf"><label class="f"><span>E-mail</span><input id="lmail" name="email" type="email" autocomplete="username" required></label><label class="f"><span>Mot de passe</span><input name="pw" type="password" autocomplete="current-password" required></label><div id="lerr"></div><button class="btn pri" type="submit" style="width:100%">Se connecter</button></form>
+<p style="margin-top:12px"><button class="lnk" data-act="reset">Mot de passe oublié ?</button></p></div>`}
+function vDenied(){return`<div class="card" style="max-width:520px;margin:6vh auto 0"><h1>Accès non autorisé</h1><p>Le compte <b>${esc(S.user?.email)}</b> est bien connecté, mais il n'est pas dans la liste de l'équipe.</p><p class="mute">Demandez à l'administrateur de l'ajouter (Ma société → Équipe).${S.err2?' Code : '+esc(S.err2):''}</p><button class="btn" data-act="logout">Se déconnecter</button></div>`}
+async function login(f){const e=$('#lerr');e.innerHTML='';try{await signInWithEmailAndPassword(auth,f.email.value.trim(),f.pw.value)}catch(err){const m={'auth/invalid-credential':'E-mail ou mot de passe incorrect.','auth/wrong-password':'E-mail ou mot de passe incorrect.','auth/user-not-found':'E-mail ou mot de passe incorrect.','auth/too-many-requests':'Trop d\u2019essais : réessayez dans quelques minutes.','auth/network-request-failed':'Pas de connexion internet.'}[err.code]||('Connexion impossible ('+err.code+').');e.innerHTML=`<p class="err">${esc(m)}</p>`}}
+
+function startSubs(){
+ const timer=setTimeout(()=>{if(!S.ready){S.err=navigator.onLine?'slow':'offline';soft()}},10000);
+ S.db.collection('clients').onSnapshot(s=>{S.clients=s.docs.map(d=>({id:d.id,...d.data()}));if(!s.metadata.fromCache){S.ready=true;if(S.err==='slow'||S.err==='offline')S.err=null;clearTimeout(timer)}soft()},()=>{clearTimeout(timer);S.err='dberr';soft()});
+ S.db.collection('pvs').onSnapshot(s=>{S.pvs=s.docs.map(d=>({id:d.id,...d.data()}));soft()},()=>{});
+ S.db.doc('config/entreprise').onSnapshot(d=>{if(d.exists)S.cfg={...DEF,...d.data()};if(S.view!=='settings')soft()},()=>{});
+ if(S.member?.role==='admin')S.db.collection('membres').onSnapshot(s=>{S.members=s.docs.map(d=>({id:d.id,...d.data()}));if(S.view==='settings'&&!document.activeElement?.closest('form,.tool'))render()},()=>{});
+}
+onAuthStateChanged(auth,async u=>{stopAll();S.user=u;S.member=null;S.db=S.assets=null;S.ready=false;S.clients=[];S.pvs=[];S.files=[];
+ if(!u){go('login');return}
+ go('loading');
+ try{const m=await getDoc(doc(fdb,'membres/'+u.email.toLowerCase()));if(!m.exists()){S.err2='';go('denied');return}S.member=m.data()}
+ catch(e){S.err2=e.code||'';go('denied');return}
+ S.db=DB;S.assets=ASSETS;S.dl=true;startSubs();go('home')});
+addEventListener('online',()=>{if(S.err==='offline'){S.err=null;soft()}});addEventListener('offline',()=>{S.err='offline';soft()});
+addEventListener('beforeinstallprompt',e=>{e.preventDefault();S.ip=e;if(S.view==='home')render()});
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+S.view='loading';render();
+
+</script>
+</body>
+</html>

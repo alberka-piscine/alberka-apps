@@ -249,7 +249,8 @@ function vClient(){const c=client(S.cid);if(!c)return`<button class="lnk" data-a
 <div class="card sec"><h2>PV de réception</h2>${pvHtml}</div>
 <div class="card sec"><h2>Photos</h2>${canUp?`<div class="tool"><select id="pcat" aria-label="Catégorie des photos">${Object.entries(PHOTO_CATS).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select><label class="btn sm">Appareil photo<input type="file" accept="image/*" capture="environment" data-file="cphoto" hidden></label><label class="btn sm">Galerie<input type="file" accept="image/*" multiple data-file="cphoto" hidden></label></div>`:''}${phHtml}</div>
 <div class="card sec"><h2>Documents</h2>${canUp?`<div class="tool"><select id="dcat" aria-label="Type de document">${Object.entries(DOC_CATS).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select><label class="btn sm">Ajouter un PDF ou une image<input type="file" accept="application/pdf,image/*" multiple data-file="cdoc" hidden></label></div>`:''}${docHtml}</div>
-<div class="card sec"><h2>Notes et historique</h2><textarea id="notes" placeholder="Échanges, rendez-vous, SAV, remarques…">${esc(c.notes||'')}</textarea><div class="row" style="margin-top:8px"><button class="btn sm" data-act="saveNotes">Enregistrer les notes</button></div></div>`}
+<div class="card sec"><h2>Notes et historique</h2><textarea id="notes" placeholder="Échanges, rendez-vous, SAV, remarques…">${esc(c.notes||'')}</textarea><div class="row" style="margin-top:8px"><button class="btn sm" data-act="saveNotes">Enregistrer les notes</button></div></div>
+${S.member?.role==='admin'?`<div class="sec" style="text-align:center"><button class="btn sm dang" data-act="delClient">Supprimer ce dossier</button></div>`:''}`}
 
 function vCForm(){const c=S.edit?client(S.edit)||{}:{idem:true};const i=(n,l,t='text',x='')=>`<label class="f"><span>${l}</span><input name="${n}" type="${t}" value="${esc(c[n]||'')}" ${x}></label>`;
  return`<button class="lnk" data-act="${S.edit?'back':'home'}">← Annuler</button><h1>${S.edit?'Modifier le client':'Nouveau client'}</h1>
@@ -490,6 +491,17 @@ const A={
  delFile:a=>modal(`<h2>Supprimer ce fichier ?</h2><p>Il sera retiré du dossier et effacé définitivement.</p><div class="row"><button class="btn dang" data-act="delOk" data-id="${esc(a.dataset.id)}">Supprimer définitivement</button><button class="btn" data-act="closeModal">Annuler</button></div>`),
  delOk:async a=>{const f=S.files.find(x=>x.id===a.dataset.id);closeModal();if(!f||f.pvId)return;try{await S.db.doc('files/'+f.id).delete();await S.assets.delete(f.assetId).catch(()=>{});toast('Fichier supprimé.')}catch(e){toast('Suppression impossible.')}},
  closeModal:()=>closeModal(),zip:()=>exportZip(),
+ delClient:()=>{const c=client(S.cid);if(!c)return;const n=S.pvs.filter(p=>p.clientId===c.id).length;
+  modal(`<h2>Supprimer le dossier de ${esc(fullName(c))} ?</h2><p>Le client, ses ${n} PV, ses photos et ses documents seront <b>effacés définitivement</b>. Impossible de revenir en arrière.</p>${n?'<p class="note">Attention : ce dossier contient un PV signé. Ne supprimez que des dossiers de test ou créés par erreur.</p>':''}<label class="f"><span>Tapez SUPPRIMER pour confirmer</span><input id="delconf" autocomplete="off"></label><div class="row"><button class="btn dang" data-act="delClientOk">Supprimer définitivement</button><button class="btn" data-act="closeModal">Annuler</button></div>`)},
+ delClientOk:async()=>{if($('#delconf')?.value.trim().toUpperCase()!=='SUPPRIMER')return toast('Tapez SUPPRIMER pour confirmer.');const id=S.cid;busy('Suppression du dossier…');
+  try{const pvs=S.pvs.filter(p=>p.clientId===id),files=[...S.files];const urls=new Set();
+   files.forEach(f=>f.assetId&&urls.add(f.assetId));pvs.forEach(p=>[p.pdfAssetId,p.sigClientAssetId,p.sigEntAssetId,...(p.photoIds||[])].forEach(u=>u&&urls.add(u)));
+   for(const f of files)await S.db.doc('files/'+f.id).delete();
+   for(const p of pvs)await S.db.doc('pvs/'+p.id).delete();
+   await S.db.doc('clients/'+id).delete();
+   for(const u of urls)await S.assets.delete(u).catch(()=>{});
+   clearDraft(id);S.unF?.();S.unF=null;closeModal();toast('Dossier supprimé.');go('home')}
+  catch(e){closeModal();toast('Suppression impossible ('+(e.code||e.message)+'). Les règles Firebase sont-elles à jour ?')}},
  saveNotes:async()=>{try{await S.db.doc('clients/'+S.cid).update({notes:$('#notes').value,updatedAt:new Date().toISOString()});toast('Notes enregistrées.')}catch(e){toast('Enregistrement impossible.')}}};
 
 document.addEventListener('click',e=>{const a=e.target.closest('[data-act]');if(!a||a.disabled)return;if(a.tagName==='A')return;const f=A[a.dataset.act];if(f){e.preventDefault();f(a,e)}});

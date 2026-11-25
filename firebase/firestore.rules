@@ -23,13 +23,14 @@ service cloud.firestore {
       allow read, create: if isMember();
       allow update: if isMember()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reservesOuvertes', 'suiviPar']);
-      allow delete: if false;
+      // seul l'administrateur peut supprimer (dossiers de test ou erreurs)
+      allow delete: if isAdmin();
     }
 
     match /files/{id} {
       allow read, create, update: if isMember();
-      // une photo jointe à un PV signé reste comme preuve
-      allow delete: if isMember() && resource.data.get('pvId', null) == null;
+      // une photo jointe à un PV signé reste comme preuve (sauf pour l'administrateur)
+      allow delete: if isAdmin() || (isMember() && resource.data.get('pvId', null) == null);
     }
 
     match /{coll}/{docId=**} {

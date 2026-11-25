@@ -150,12 +150,11 @@ const COMMON=[
 {k:'abords',t:"Aucun dégât n'est constaté sur les existants (pelouse, dallage, plage, clôture, réseaux), hors réserves éventuelles."},
 {k:'photos',t:"Des photos de fin de chantier ont été prises en ma présence."}];
 const LISTS={
-abri:[{k:'a_ancrage',t:"Les rails et ancrages sont fixés ; l'abri est d'aplomb et aligné."},
+abri:[{k:'a_ancrage',t:"Les rails et/ou ancrages sont fixés ; l'abri est d'aplomb et aligné."},
 {k:'a_coul',t:"Les modules coulissent correctement sur toute la longueur ; butées et freins sont en place."},
 {k:'a_verrou',t:"Les verrous et serrures fonctionnent ; il m'a été conseillé de garder les clés hors de portée des enfants."},
 {k:'a_vent',t:"Les consignes « vent fort et neige » m'ont été données (abri fermé et verrouillé, aération)."},
-{k:'a_motor',t:"Motorisation : fonctionnement et fins de course vérifiés.",na:1},
-{k:'a_nf',t:"L'attestation de conformité NF P90-309 (abri, dispositif de sécurité) m'a été remise.",na:1}],
+{k:'a_motor',t:"Motorisation : fonctionnement et fins de course vérifiés.",na:1}],
 piscine:[{k:'p_niveau',t:"La coque est posée de niveau ; remblai et ceinture sont réalisés."},
 {k:'p_hydro',t:"Les raccordements hydrauliques sont réalisés, sans fuite apparente constatée."},
 {k:'p_eau',t:"La mise en eau est effectuée, ou les consignes de mise en eau m'ont été données.",na:1},
@@ -198,7 +197,8 @@ const fullName=c=>c?[c.civ,c.prenom,c.nom].filter(Boolean).join(' '):'';
 const addr=c=>c?[c.adresse,[c.cp,c.ville].filter(Boolean).join(' ')].filter(Boolean).join(', '):'';
 const chAddr=c=>!c?'':(c.idem!==false||!c.chAdresse)?addr(c):[c.chAdresse,[c.chCp,c.chVille].filter(Boolean).join(' ')].filter(Boolean).join(', ');
 const safe=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^A-Za-z0-9-]+/g,'_').replace(/^_|_$/g,'').slice(0,60)||'sans_nom';
-const checklist=cat=>[...COMMON,...(LISTS[cat]||[])];
+const SKIP={abri:['garanties']},NA_PLUS={abri:['notice']};
+const checklist=cat=>[...COMMON.filter(i=>!(SKIP[cat]||[]).includes(i.k)).map(i=>(NA_PLUS[cat]||[]).includes(i.k)?{...i,na:1}:i),...(LISTS[cat]||[])];
 const getP=(o,p)=>p.split('.').reduce((t,k)=>t?.[k],o);
 function setP(o,p,v){const k=p.split('.');let t=o;while(k.length>1)t=t[k.shift()];t[k[0]]=v}
 async function sha256(buf){const h=await crypto.subtle.digest('SHA-256',buf);return[...new Uint8Array(h)].map(b=>b.toString(16).padStart(2,'0')).join('')}
@@ -318,12 +318,12 @@ function stepBody(){const w=S.wiz,c=client(w.clientId),lev=w.type==='levee';if(i
 <div class="card sec"><h2>Références</h2><div class="g2">${inp('N° de devis / bon de commande','refs.devis')}${inp('Date du devis','refs.devisDate','date')}${inp('Début des travaux','refs.debut','date')}${inp('Fin des travaux','refs.fin','date')}${inp('N° de facture (facultatif)','refs.facture')}</div></div>
 <div class="card sec"><h2>Intervenants</h2><div class="g2">${inp("Représentant de l'entreprise",'signEntNom')}${inp('Équipe de pose','equipe')}</div></div>`;
  if(w.step===1)return`<div class="card"><h2>Ouvrage installé</h2><div class="chips">${Object.entries(CATS).map(([k,v])=>`<button class="chip ${w.ouvrage.cat===k?'on':''}" data-act="cat" data-v="${k}" ${lev?'disabled':''}>${v}</button>`).join('')}</div>
-<div class="g2">${inp('Marque / fabricant','ouvrage.marque','text','list="brands"')}${inp('Modèle choisi *','ouvrage.modele')}${inp('Dimensions','ouvrage.dims','text','placeholder="ex. 8,50 × 4,20 m"')}${inp('Coloris / finition','ouvrage.coloris')}${inp('N° de série / lot','ouvrage.serie')}
+<div class="g2">${inp('Marque / fabricant','ouvrage.marque','text','list="brands"')}${inp('Modèle choisi *','ouvrage.modele')}${inp('Dimensions','ouvrage.dims','text','placeholder="ex. 8,50 × 4,20 m"')}${inp('Coloris / finition','ouvrage.coloris')}${w.ouvrage.cat==='abri'?'':inp('N° de série / lot','ouvrage.serie')}
 <label class="f"><span>Dispositif de sécurité (loi de 2003)</span><select data-b="ouvrage.securite"><option value="">—</option>${SECU.map(s=>`<option ${w.ouvrage.securite===s?'selected':''}>${esc(s)}</option>`).join('')}</select></label></div>
 ${ta('Options et équipements installés','ouvrage.options','ex. motorisation, éclairage LED, électrolyseur, escalier, volet…')}<datalist id="brands">${BRANDS.map(b=>`<option value="${esc(b)}">`).join('')}</datalist></div>`;
  if(w.step===2&&lev)return`<div class="card"><h2>Contrôle des réserves</h2><p class="mute">Pour chaque réserve, le client constate si elle est levée.</p>${w.reserves.map((r,i)=>`<div class="res"><b>Réserve ${i+1}</b><p>${esc(r.txt)}</p>${r.delai?`<p class="mute">À lever avant le ${esc(fmtD(r.delai))}</p>`:''}<div class="chk" data-i="${i}" data-v="${r.levee?'ok':'ko'}" style="border:0;padding:4px 0"><div></div><div class="ops"><button class="op" data-act="rlev" data-v="ok">✓ Levée</button><button class="op" data-act="rlev" data-v="ko">✗ Non levée</button></div></div><label class="f"><span>Commentaire</span><input data-r="${i}" data-f="comment" value="${esc(r.comment)}"></label></div>`).join('')||'<p>Aucune réserve à lever.</p>'}</div>`;
  if(w.step===2){const items=checklist(w.ouvrage.cat),done=items.filter(i=>w.checks[i.k]).length;const row=i=>`<div class="chk" data-k="${i.k}" data-v="${w.checks[i.k]||''}"><div>${esc(i.t)}</div><div class="ops"><button class="op" data-act="chk" data-v="ok">✓ Conforme</button><button class="op" data-act="chk" data-v="ko">✗ Réserve</button>${i.na?'<button class="op" data-act="chk" data-v="na">Sans objet</button>':''}</div></div>`;
- return`<div class="card"><h2>Vérifications contradictoires</h2><p class="mute">Tendez la tablette au client : il valide chaque point. « Réserve » crée une réserve à préciser à l'étape suivante.</p><p><b id="cnt">${done} / ${items.length}</b> points renseignés</p><h3>Généralités</h3>${COMMON.map(row).join('')}<h3>${CATS[w.ouvrage.cat]}</h3>${(LISTS[w.ouvrage.cat]||[]).map(row).join('')}</div>`}
+ return`<div class="card"><h2>Vérifications contradictoires</h2><p class="mute">Tendez la tablette au client : il valide chaque point. « Réserve » crée une réserve à préciser à l'étape suivante.</p><p><b id="cnt">${done} / ${items.length}</b> points renseignés</p><h3>Généralités</h3>${checklist(w.ouvrage.cat).filter(i=>COMMON.some(x=>x.k===i.k)).map(row).join('')}<h3>${CATS[w.ouvrage.cat]}</h3>${(LISTS[w.ouvrage.cat]||[]).map(row).join('')}</div>`}
  const fin=w.photos.filter(p=>p.cat==='fin');
  const phBlock=`<div class="card sec"><h2>Photos de fin de chantier</h2><p class="mute">Vue d'ensemble, détails, abords nettoyés : prises en présence du client.</p><div class="ph">${fin.map(p=>`<div class="t"><img src="${esc(src(p))}" alt="Photo de fin de chantier"><button class="x" data-act="delWph" data-k="${esc(p.key)}" aria-label="Retirer la photo">×</button>${p.assetId?'':'<i class="up">envoi…</i>'}</div>`).join('')}${phAdd('wiz')}</div></div>
 <div class="card sec"><h2>Observations du client</h2>${ta('Observations (facultatif)','obs')}</div>`;

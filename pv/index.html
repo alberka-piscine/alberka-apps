@@ -179,7 +179,14 @@ const DOC_CATS={devis:'Devis signé',facture:'Facture',dp:'Déclaration préalab
 const SECU=["Abri de piscine — NF P90-309","Couverture de sécurité — NF P90-308","Barrière de protection — NF P90-306","Alarme — NF P90-307","Dispositif existant chez le client","À la charge du client (non fourni)","Sans objet"];
 const BRANDS=["ABORAL","Ref Cover","Alukov","AquaComet","Abris LabelBleu"];
 const LOGO=document.querySelector('.logo')?.src||'';
-const DEF={raison:'ALBERKA PISCINE',forme:'SAS au capital de 1 500 € - RCS Lorient 922 363 957',adresse:'40 Rue Saint Guénolé, 56270 Ploemeur',siret:'922 363 957 00015',tel:'06 89 08 49 18',email:'contact@alberkapiscine.fr',site:'alberkapiscine.fr',assureur:'MAAF Assurances SA',police:'156198000 R 001',representant:'Florian Renonce'};
+const POSE_TYPES=['altimetrie','controle'];const isPose=t=>POSE_TYPES.includes(t);
+const PTS=['A','B','C','D'];
+const TAGS={ref:'Repère (point 0)','pt-A':'Point A','pt-B':'Point B','pt-C':'Point C','pt-D':'Point D',radier:'Lit de pose / radier',puits:'Puits de décompression','r-bonde':'Bonde de fond','r-skimmer':'Skimmer(s)','r-balai':'Prise balai','r-refoulement':'Refoulement(s)','r-spot':'Spot(s) lumière','r-autre':'Autre raccord'};
+const RACC=[['bonde','Bonde de fond'],['skimmer','Skimmer(s)'],['balai','Prise balai'],['refoulement','Refoulement(s)'],['spot','Spot(s) lumière'],['autre','Autre raccord (préciser)']];
+const TITLES={reception:'PV de réception',levee:'PV de levée des réserves',altimetrie:'Relevé de niveaux de la coque',controle:'Contrôles avant remblai'};
+const TYPELABEL={reception:'Réception',levee:'Levée des réserves',altimetrie:'Relevé de niveaux',controle:'Contrôles avant remblai'};
+const num=v=>{const n=parseFloat(String(v??'').replace(',','.'));return isFinite(n)?n:null};
+const DEF={tolNiveau:'',epRadier:'100',raison:'ALBERKA PISCINE',forme:'SAS au capital de 1 500 € - RCS Lorient 922 363 957',adresse:'40 Rue Saint Guénolé, 56270 Ploemeur',siret:'922 363 957 00015',tel:'06 89 08 49 18',email:'contact@alberkapiscine.fr',site:'alberkapiscine.fr',assureur:'MAAF Assurances SA',police:'156198000 R 001',representant:'Florian Renonce'};
 const S={db:null,assets:null,dl:null,user:null,member:null,members:[],clients:[],pvs:[],cfg:{...DEF},view:'home',cid:null,files:[],unF:null,q:'',wiz:null,ready:false,err:null,edit:null,last:null};
 
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
@@ -212,12 +219,12 @@ function busy(m){modal(`<div class="spin"></div><p style="text-align:center;font
 function busyMsg(m){const b=$('#bmsg');if(b)b.textContent=m}
 
 /* ---------- statut ---------- */
-function st(cid){const p=S.pvs.filter(x=>x.clientId===cid);if(!p.length)return{k:'todo',t:'À réceptionner'};
+function st(cid){const all=S.pvs.filter(x=>x.clientId===cid),p=all.filter(x=>!isPose(x.type));if(!p.length)return all.length?{k:'todo',t:'Coque posée'}:{k:'todo',t:'À réceptionner'};
  if(p.some(x=>x.reservesOuvertes))return{k:'warn',t:'Réserves en cours'};
  const last=[...p].sort((a,b)=>(b.signedAt||'').localeCompare(a.signedAt||''))[0];
  return last.decision==='refus'?{k:'ko',t:'Réception refusée'}:{k:'ok',t:'Réceptionné'}}
-const decLabel=p=>p.type==='levee'?(p.reservesOuvertes?'Levée partielle':'Réserves levées'):({sans:'Sans réserve',avec:'Avec réserves',refus:'Refusée'}[p.decision]||'');
-const decK=p=>p.reservesOuvertes?'warn':p.decision==='refus'?'ko':'ok';
+const decLabel=p=>p.type==='altimetrie'?(p.calc?.ok===true?'Niveaux conformes':p.calc?.ok===false?'Hors tolérance':'Relevé signé'):p.type==='controle'?(p.calc?.ok===true?'Contrôles conformes':p.calc?.ok===false?'Point à revoir':'Contrôles signés'):p.type==='levee'?(p.reservesOuvertes?'Levée partielle':'Réserves levées'):({sans:'Sans réserve',avec:'Avec réserves',refus:'Refusée'}[p.decision]||'');
+const decK=p=>isPose(p.type)?(p.calc?.ok===false?'ko':p.calc?.ok===true?'ok':'todo'):p.reservesOuvertes?'warn':p.decision==='refus'?'ko':'ok';
 
 /* ---------- vues ---------- */
 function banner(){
@@ -232,13 +239,13 @@ function listHtml(){const q=S.q.toLowerCase().trim();
  return l.map(c=>{const s=st(c.id);return`<button class="card crow" data-act="open" data-id="${esc(c.id)}"><span class="av">${esc(((c.prenom||'')[0]||'')+((c.nom||'')[0]||'')).toUpperCase()}</span><span class="m"><b>${esc(fullName(c)||'Sans nom')}</b><span>${esc([c.chVille||c.ville,c.produit].filter(Boolean).join(' · '))}</span></span><span class="badge b-${s.k}">${s.t}</span></button>`}).join('')}
 function vHome(){const nRes=S.pvs.filter(p=>p.reservesOuvertes).length;
  return`${banner()}<section class="hero"><div><h1>Dossiers clients</h1><p class="mute">Un dossier par client : coordonnées, PV de réception signé, photos et documents.</p></div><div class="row">${S.ip?'<button class="btn" data-act="install">Installer l\u2019appli</button>':''}<button class="btn pri" data-act="newClient">+ Nouveau client</button></div></section>
-<div class="stats"><div class="stat"><b>${S.clients.length}</b>clients</div><div class="stat"><b>${S.pvs.length}</b>PV signés</div><div class="stat"><b>${nRes}</b>réserves en cours</div></div>
+<div class="stats"><div class="stat"><b>${S.clients.length}</b>clients</div><div class="stat"><b>${S.pvs.filter(p=>!isPose(p.type)).length}</b>PV signés</div><div class="stat"><b>${nRes}</b>réserves en cours</div></div>
 <input class="search" id="q" type="search" placeholder="Rechercher un client, une ville, un téléphone…" value="${esc(S.q)}" aria-label="Rechercher"><div id="clist">${listHtml()}</div>`}
 
 function vClient(){const c=client(S.cid);if(!c)return`<button class="lnk" data-act="home">← Dossiers</button><p class="empty">Dossier introuvable ou en cours de chargement.</p>`;
  const s=st(c.id),pvs=S.pvs.filter(p=>p.clientId===c.id).sort((a,b)=>(b.signedAt||'').localeCompare(a.signedAt||''));
  const photos=S.files.filter(f=>f.kind==='photo'),docs=S.files.filter(f=>f.kind==='doc'),canUp=!!S.assets;
- const pvHtml=pvs.length?pvs.map(p=>`<div class="pvl"><div><b>${esc(p.ref)}</b> <span class="badge b-${decK(p)}">${decLabel(p)}</span><div class="mute">${p.type==='levee'?'Levée des réserves':'Réception'} · ${esc(CATS[p.ouvrage?.cat]||'')} ${esc(p.ouvrage?.modele||'')} · signé le ${esc(fmtDT(p.signedAt))}${p.reserves?.length?` · ${p.reserves.length} réserve(s)`:''}</div></div><div class="row"><a class="btn sm" href="${esc(p.pdfAssetId)}" target="_blank" rel="noopener">Voir</a><button class="btn sm" data-act="dlPv" data-id="${esc(p.id)}">Télécharger</button>${p.reservesOuvertes&&canUp?`<button class="btn sm gold" data-act="levee" data-id="${esc(p.id)}">Lever les réserves</button>`:''}</div></div>`).join(''):`<p class="mute">Aucun PV pour l'instant.</p>`;
+ const pvHtml=pvs.length?pvs.map(p=>`<div class="pvl"><div><b>${esc(p.ref)}</b> <span class="badge b-${decK(p)}">${decLabel(p)}</span><div class="mute">${TYPELABEL[p.type]||''} · ${esc(CATS[p.ouvrage?.cat]||'')} ${esc(p.ouvrage?.modele||'')} · signé le ${esc(fmtDT(p.signedAt))}${p.reserves?.length?` · ${p.reserves.length} réserve(s)`:''}</div></div><div class="row"><a class="btn sm" href="${esc(p.pdfAssetId)}" target="_blank" rel="noopener">Voir</a><button class="btn sm" data-act="dlPv" data-id="${esc(p.id)}">Télécharger</button>${p.reservesOuvertes&&canUp?`<button class="btn sm gold" data-act="levee" data-id="${esc(p.id)}">Lever les réserves</button>`:''}</div></div>`).join(''):`<p class="mute">Aucun PV pour l'instant.</p>`;
  const groups=Object.keys(PHOTO_CATS).map(k=>[k,photos.filter(f=>f.cat===k)]).filter(g=>g[1].length);
  const phHtml=groups.length?groups.map(([k,l])=>`<h3>${PHOTO_CATS[k]} <span class="mute">(${l.length})</span></h3><div class="ph">${l.map(f=>`<button class="t" data-act="photo" data-id="${esc(f.id)}"><img loading="lazy" src="${esc(f.assetId)}" alt="${esc(PHOTO_CATS[k])}"></button>`).join('')}</div>`).join(''):`<p class="mute">Aucune photo.</p>`;
  const docHtml=docs.length?docs.map(f=>`<div class="pvl"><div><b>${esc(DOC_CATS[f.cat]||'Document')}</b><div class="mute">${esc(f.name)} · ${esc(fmtD(f.createdAt))}</div></div><div class="row"><a class="btn sm" href="${esc(f.assetId)}" target="_blank" rel="noopener">Voir</a><button class="btn sm" data-act="dlFile" data-id="${esc(f.id)}">Télécharger</button>${canUp?`<button class="btn sm dang" data-act="delFile" data-id="${esc(f.id)}">Supprimer</button>`:''}</div></div>`).join(''):`<p class="mute">Aucun document.</p>`;
@@ -246,7 +253,8 @@ function vClient(){const c=client(S.cid);if(!c)return`<button class="lnk" data-a
 <div class="card"><div class="row" style="justify-content:space-between;align-items:flex-start"><div><h1>${esc(fullName(c)||'Sans nom')}</h1>${c.societe?`<p class="mute">${esc(c.societe)}</p>`:''}</div><span class="badge b-${s.k}">${s.t}</span></div>
 <dl class="kv"><dt>Téléphone</dt><dd>${c.tel?`<a href="tel:${esc(c.tel.replace(/\s/g,''))}">${esc(c.tel)}</a>`:'—'}</dd><dt>E-mail</dt><dd>${esc(c.email||'—')}</dd><dt>Adresse</dt><dd>${esc(addr(c)||'—')}</dd><dt>Chantier</dt><dd>${esc(chAddr(c)||'—')}</dd>${c.produit?`<dt>Produit</dt><dd>${esc(c.produit)}</dd>`:''}${c.commercial?`<dt>Commercial</dt><dd>${esc(c.commercial)}</dd>`:''}</dl>
 <div class="row" style="margin-top:14px">${canUp?`<button class="btn pri" data-act="newPv">Faire signer le PV de réception</button>`:''}<button class="btn" data-act="editClient">Modifier</button><button class="btn" data-act="zip">Exporter le dossier (.zip)</button></div></div>
-<div class="card sec"><h2>PV de réception</h2>${pvHtml}</div>
+${canUp?`<div class="card sec"><h2>Pose piscine coque</h2><p class="mute">À faire signer pendant la pose, avant remblai. Chaque document se signe séparément.</p><div class="row"><button class="btn gold" data-act="newPose" data-t="altimetrie">1. Relevé de niveaux (4 points)</button><button class="btn" data-act="newPose" data-t="controle">2. Contrôles avant remblai</button></div></div>`:''}
+<div class="card sec"><h2>Documents signés</h2>${pvHtml}</div>
 <div class="card sec"><h2>Photos</h2>${canUp?`<div class="tool"><select id="pcat" aria-label="Catégorie des photos">${Object.entries(PHOTO_CATS).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select><label class="btn sm">Appareil photo<input type="file" accept="image/*" capture="environment" data-file="cphoto" hidden></label><label class="btn sm">Galerie<input type="file" accept="image/*" multiple data-file="cphoto" hidden></label></div>`:''}${phHtml}</div>
 <div class="card sec"><h2>Documents</h2>${canUp?`<div class="tool"><select id="dcat" aria-label="Type de document">${Object.entries(DOC_CATS).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select><label class="btn sm">Ajouter un PDF ou une image<input type="file" accept="application/pdf,image/*" multiple data-file="cdoc" hidden></label></div>`:''}${docHtml}</div>
 <div class="card sec"><h2>Notes et historique</h2><textarea id="notes" placeholder="Échanges, rendez-vous, SAV, remarques…">${esc(c.notes||'')}</textarea><div class="row" style="margin-top:8px"><button class="btn sm" data-act="saveNotes">Enregistrer les notes</button></div></div>
@@ -263,41 +271,49 @@ ${i('adresse','Adresse')}<div class="g2">${i('cp','Code postal','text','inputmod
 
 function vSettings(){const c=S.cfg;const i=(n,l,x='')=>`<label class="f"><span>${l}</span><input name="${n}" value="${esc(c[n]||'')}" ${x}></label>`;
  return`<button class="lnk" data-act="home">← Dossiers</button><h1>Ma société</h1><p class="mute">Les informations de votre entreprise (pas celles des clients) : elles apparaissent en en-tête de chaque PV. L'assurance décennale et la RC pro sont attendues sur vos documents.</p>
-<form id="sf" class="card"><div class="g2">${i('raison','Raison sociale')}${i('forme','Forme et capital','placeholder="ex. SAS au capital de …"')}</div>${i('adresse','Adresse du siège')}<div class="g2">${i('siret','SIRET')}${i('tel','Téléphone')}${i('email','E-mail')}${i('site','Site web')}${i('assureur','Assureur décennale / RC pro')}${i('police','N° de police')}</div>${i('representant','Représentant par défaut sur les PV')}
+<form id="sf" class="card"><div class="g2">${i('raison','Raison sociale')}${i('forme','Forme et capital','placeholder="ex. SAS au capital de …"')}</div>${i('adresse','Adresse du siège')}<div class="g2">${i('siret','SIRET')}${i('tel','Téléphone')}${i('email','E-mail')}${i('site','Site web')}${i('assureur','Assureur décennale / RC pro')}${i('police','N° de police')}</div>${i('representant','Représentant par défaut sur les PV')}<h3>Pose des piscines coques</h3><div class="g2">${i('tolNiveau','Tolérance de niveau entre les 4 points (mm)','inputmode="decimal" placeholder="selon la notice de pose ABORAL"')}${i('epRadier','Épaisseur du lit de pose attendue (mm)','inputmode="numeric"')}</div>
 <button class="btn pri" type="submit">Enregistrer</button></form>
 ${S.member?.role==='admin'?`<div class="card sec"><h2>Équipe : qui a accès</h2><p class="mute">Ajoutez l'e-mail d'un poseur ou d'un commercial ici, puis créez son compte (e-mail + mot de passe) dans la console Firebase, rubrique Authentication.</p>${S.members.map(m=>`<div class="pvl"><div><b>${esc(m.id)}</b><div class="mute">${esc({admin:'Administrateur',poseur:'Poseur',commercial:'Commercial'}[m.role]||m.role)}</div></div>${m.id!==S.user.email.toLowerCase()?`<button class="btn sm dang" data-act="delMember" data-id="${esc(m.id)}">Retirer</button>`:'<span class="mute">vous</span>'}</div>`).join('')}<div class="tool"><input id="mmail" type="email" placeholder="e-mail de la personne" style="flex:2 1 220px"><select id="mrole"><option value="poseur">Poseur</option><option value="commercial">Commercial</option><option value="admin">Administrateur</option></select><button class="btn" data-act="addMember">Ajouter</button></div></div>`:''}
 <div class="card sec"><p class="mute">Connecté en tant que <b>${esc(S.user?.email)}</b></p><button class="btn" data-act="logout">Se déconnecter</button></div>`}
 
 /* ---------- assistant PV ---------- */
-const STEPS={reception:['Chantier','Ouvrage','Vérifications','Réserves & photos','Signatures'],levee:['Chantier','Ouvrage','Réserves','Photos','Signatures']};
-function newWiz(cid,type,parent){const c=client(cid)||{};
+const STEPS={altimetrie:['Chantier','Niveaux','Signature'],controle:['Chantier','Radier & puits','Raccords','Signature'],reception:['Chantier','Ouvrage','Vérifications','Réserves & photos','Signatures'],levee:['Chantier','Ouvrage','Réserves','Photos','Signatures']};
+function newWiz(cid,type,parent){const w=newWiz0(cid,type,parent);if(!isPose(type))return w;
+ const prev=S.pvs.filter(p=>p.clientId===cid&&p.ouvrage?.cat==='piscine').sort((a,b)=>(b.signedAt||'').localeCompare(a.signedAt||''))[0];
+ w.ouvrage=prev?{...prev.ouvrage}:{cat:'piscine',marque:'ABORAL',modele:'',dims:'',coloris:'',options:'',serie:'',securite:''};if(prev?.refs?.devis)w.refs.devis=prev.refs.devis;
+ w.decision=type;w.alt={mode:'lecture',ref:'A',refLabel:'',refLecture:'',pts:{A:{v:'',c:''},B:{v:'',c:''},C:{v:'',c:''},D:{v:'',c:''}}};
+ w.ctl={radier:{nature:'Gravier concassé (non roulé) sur géotextile',ep:'',c:''},puits:{pos:'',mm:'',c:''},rac:{},souples:false};return w}
+function newWiz0(cid,type,parent){const c=client(cid)||{};
  return{pvId:'pv'+uid(),step:0,clientId:cid,type,parentId:parent?.id||null,parentRef:parent?.ref||'',ref:'PV-'+today().replace(/-/g,'')+'-'+Math.random().toString(36).slice(2,6).toUpperCase(),
  date:today(),lieu:c.chVille||c.ville||'',refs:parent?{...parent.refs}:{devis:'',devisDate:'',debut:'',fin:today(),facture:''},
  ouvrage:parent?{...parent.ouvrage}:{cat:'abri',marque:'',modele:'',dims:'',coloris:'',options:'',serie:'',securite:''},
  equipe:'',checks:{},decision:type==='levee'?'levee':'sans',reserves:parent?(parent.reserves||[]).filter(r=>!r.levee).map(r=>({txt:r.txt,delai:r.delai||'',levee:false,comment:''})):[],
  refus:'',obs:'',photos:[],signClientNom:[c.prenom,c.nom].filter(Boolean).join(' '),signEntNom:S.cfg.representant||'',sigC:null,sigE:null,rC:2.4,rE:2.4,accept:false,saved:null}}
-const dKey=cid=>'pvDraft:'+cid;
+const dKey=(cid,t)=>(isPose(t)?t+'Draft:':'pvDraft:')+cid;
 let dt;function saveDraft(){clearTimeout(dt);dt=setTimeout(saveDraftNow,400)}
 function saveDraftNow(){const w=S.wiz;if(!w)return;w.saved=new Date().toISOString();
- try{localStorage.setItem(dKey(w.clientId),JSON.stringify(w))}catch(e){try{localStorage.setItem(dKey(w.clientId),JSON.stringify({...w,photos:w.photos.filter(p=>p.assetId).map(p=>({...p,dataUrl:null}))}))}catch(e2){}}}
-function loadDraft(cid){try{return JSON.parse(localStorage.getItem(dKey(cid))||'null')}catch(e){return null}}
-function clearDraft(cid){try{localStorage.removeItem(dKey(cid))}catch(e){}}
+ try{localStorage.setItem(dKey(w.clientId,w.type),JSON.stringify(w))}catch(e){try{localStorage.setItem(dKey(w.clientId,w.type),JSON.stringify({...w,photos:w.photos.filter(p=>p.assetId).map(p=>({...p,dataUrl:null}))}))}catch(e2){}}}
+function loadDraft(cid,t){try{return JSON.parse(localStorage.getItem(dKey(cid,t))||'null')}catch(e){return null}}
+function clearDraft(cid,t){try{localStorage.removeItem(dKey(cid,t))}catch(e){}}
 const src=p=>p.dataUrl||p.assetId;
 const inp=(l,p,t='text',x='')=>`<label class="f"><span>${l}</span><input type="${t}" data-b="${p}" value="${esc(getP(S.wiz,p)||'')}" ${x}></label>`;
 const ta=(l,p,ph='')=>`<label class="f"><span>${l}</span><textarea data-b="${p}" placeholder="${esc(ph)}">${esc(getP(S.wiz,p)||'')}</textarea></label>`;
 const phAdd=(k,extra='')=>`<label class="addph">Appareil photo<input type="file" accept="image/*" capture="environment" data-file="${k}" ${extra} hidden></label><label class="addph">Galerie<input type="file" accept="image/*" multiple data-file="${k}" ${extra} hidden></label>`;
 
 function declaration(w){const c=client(w.clientId),n=w.signClientNom||fullName(c),e=S.cfg.raison||"l'entreprise";
+ if(w.type==='altimetrie'){const k=altCalc(w);return`Je soussigné(e) ${n}, maître de l'ouvrage, atteste avoir assisté au relevé des niveaux de la coque, posée dans son excavation et avant tout remblaiement, réalisé contradictoirement avec le représentant de ${e} le ${fmtD(w.date)}, et en accepter les valeurs.`+(k.ecart!=null?` Écart maximal constaté entre les 4 points : ${String(k.ecart).replace('.',',')} mm.`:'')}
+ if(w.type==='controle')return`Je soussigné(e) ${n}, maître de l'ouvrage, atteste avoir constaté avec le représentant de ${e}, le ${fmtD(w.date)} et avant remblaiement, l'état du lit de pose, du puits de décompression et des raccordements enterrés, tels que décrits et photographiés dans le présent document.`;
  if(w.type==='levee'){const nl=w.reserves.filter(r=>r.levee).length,t=w.reserves.length;return`Je soussigné(e) ${n}, maître de l'ouvrage, constate contradictoirement avec le représentant de ${e} la levée de ${nl} réserve(s) sur ${t} émise(s) au PV n° ${w.parentRef}.`+(nl<t?` ${t-nl} réserve(s) restent à lever.`:' Toutes les réserves sont levées.')}
  const base=`Je soussigné(e) ${n}, maître de l'ouvrage, après avoir examiné l'ouvrage contradictoirement avec le représentant de ${e}, `;
  return base+({sans:'prononce la réception des travaux sans réserve.',avec:`prononce la réception des travaux avec ${w.reserves.length} réserve(s), que l'entreprise s'engage à lever dans les délais indiqués.`,refus:'refuse la réception des travaux pour le motif indiqué.'}[w.decision]||'')+` Réception à effet du ${fmtD(w.date)}.`}
-function legal(w){const sig="Le présent procès-verbal a été établi et signé sur support électronique (tablette ou téléphone). Les signatures manuscrites numérisées, la date et l'heure de signature et une empreinte numérique des données y sont associées. Un exemplaire PDF est remis au maître de l'ouvrage.";
+function legal(w){if(isPose(w.type))return["Document établi contradictoirement pendant la pose de la coque, avant remblaiement. Il constate l'état de la pose à cette date, conformément aux directives techniques de pose des piscines coques (accord AFNOR AC P90-328) et à la notice de pose du fabricant.","Il ne vaut pas réception des travaux : celle-ci fera l'objet d'un procès-verbal de réception distinct.","Le présent document a été établi et signé sur support électronique (tablette ou téléphone). Les signatures manuscrites numérisées, la date et l'heure de signature et une empreinte numérique des données y sont associées. Un exemplaire PDF est remis au maître de l'ouvrage."];
+const sig="Le présent procès-verbal a été établi et signé sur support électronique (tablette ou téléphone). Les signatures manuscrites numérisées, la date et l'heure de signature et une empreinte numérique des données y sont associées. Un exemplaire PDF est remis au maître de l'ouvrage.";
  if(w.type==='levee')return[`Le présent procès-verbal constate contradictoirement la levée des réserves émises lors de la réception (PV n° ${w.parentRef}). Les réserves non levées restent à lever par l'entreprise dans le délai convenu.`,sig];
  return["Conformément à l'article 1792-6 du Code civil, la réception est l'acte par lequel le maître de l'ouvrage déclare accepter l'ouvrage avec ou sans réserves. Elle est prononcée contradictoirement, en présence des parties signataires.",
  "La réception emporte transfert de la garde de l'ouvrage au maître de l'ouvrage. Elle est le point de départ des garanties légales : garantie de parfait achèvement (1 an), garantie de bon fonctionnement des éléments d'équipement dissociables (2 ans minimum) et, pour les ouvrages qui y sont soumis, garantie décennale (10 ans).",
  "Les défauts apparents au jour de la réception doivent être mentionnés en réserve au présent procès-verbal. Les réserves sont levées dans le délai convenu ; leur levée est constatée par écrit, contradictoirement.",sig]}
 
-function stepBody(){const w=S.wiz,c=client(w.clientId),lev=w.type==='levee';
+function stepBody(){const w=S.wiz,c=client(w.clientId),lev=w.type==='levee';if(isPose(w.type))return poseBody(w,c);
  if(w.step===0)return`<div class="card"><h2>${lev?'Levée des réserves':'Réception des travaux'}</h2>${lev?`<p class="note">Suite au PV n° ${esc(w.parentRef)} : ${w.reserves.length} réserve(s) à contrôler.</p>`:''}<div class="g2">${inp('Date de réception','date','date')}${inp('Lieu (commune)','lieu')}</div><p class="mute">Chantier : ${esc(chAddr(c)||'adresse non renseignée')}</p></div>
 <div class="card sec"><h2>Références</h2><div class="g2">${inp('N° de devis / bon de commande','refs.devis')}${inp('Date du devis','refs.devisDate','date')}${inp('Début des travaux','refs.debut','date')}${inp('Fin des travaux','refs.fin','date')}${inp('N° de facture (facultatif)','refs.facture')}</div></div>
 <div class="card sec"><h2>Intervenants</h2><div class="g2">${inp("Représentant de l'entreprise",'signEntNom')}${inp('Équipe de pose','equipe')}</div></div>`;
@@ -324,11 +340,11 @@ ${w.decision==='refus'?`<div class="card sec">${ta('Motif du refus *','refus')}<
 <div>${inp("Représentant de l'entreprise *",'signEntNom')}<div class="sigbox ${w.sigE?'has':''}"><canvas id="sigE" aria-label="Signature de l'entreprise"></canvas></div><button class="btn sm" data-act="clearSig" data-k="sigE">Effacer</button></div></div>
 <label class="acc"><input type="checkbox" data-b="accept" ${w.accept?'checked':''}> Le client déclare avoir lu le présent procès-verbal, en accepter les termes, et recevra une copie PDF.</label></div>`}
 function vWiz(){const w=S.wiz,c=client(w.clientId),L=STEPS[w.type];
- return`<button class="lnk" data-act="quitWiz">← Quitter (le brouillon est conservé sur cet appareil)</button><h1>${w.type==='levee'?'PV de levée des réserves':'PV de réception'}</h1><p class="mute">${esc(fullName(c))} · ${esc(w.ref)}</p>
+ return`<button class="lnk" data-act="quitWiz">← Quitter (le brouillon est conservé sur cet appareil)</button><h1>${TITLES[w.type]}</h1><p class="mute">${esc(fullName(c))} · ${esc(w.ref)}</p>
 <div class="steps">${L.map((s,i)=>`<div class="${i===w.step?'on':i<w.step?'done':''}">${s}</div>`).join('')}</div><div id="werr"></div>${stepBody()}
-<div class="wbar">${w.step?'<button class="btn" data-act="prev">← Précédent</button>':'<span></span>'}${w.step<4?'<button class="btn pri" data-act="next">Suivant →</button>':'<button class="btn gold" data-act="finalize">Signer et enregistrer le PV</button>'}</div>`}
+<div class="wbar">${w.step?'<button class="btn" data-act="prev">← Précédent</button>':'<span></span>'}${w.step<L.length-1?'<button class="btn pri" data-act="next">Suivant →</button>':`<button class="btn gold" data-act="finalize">Signer et enregistrer ${isPose(w.type)?'le document':'le PV'}</button>`}</div>`}
 function vDone(){const l=S.last,c=client(l?.cid);
- return`<div class="card" style="text-align:center;padding:28px 18px"><svg width="64" height="64" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="30" fill="#17794a"/><path d="M19 33l9 9 17-19" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg><h1 style="margin-top:12px">PV signé et classé</h1><p class="mute">${esc(l?.ref)} · dossier de ${esc(fullName(c))}</p>
+ return`<div class="card" style="text-align:center;padding:28px 18px"><svg width="64" height="64" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="30" fill="#17794a"/><path d="M19 33l9 9 17-19" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg><h1 style="margin-top:12px">Document signé et classé</h1><p class="mute">${esc(l?.ref)} · dossier de ${esc(fullName(c))}</p>
 <div class="row" style="justify-content:center;margin:16px 0">${navigator.canShare?`<button class="btn gold" data-act="shareLast">Envoyer au client</button>`:''}<button class="btn pri" data-act="dlLast">Télécharger le PDF</button><a class="btn" href="${esc(l?.pdfId)}" target="_blank" rel="noopener">Voir le PDF</a><button class="btn" data-act="open" data-id="${esc(l?.cid)}">Ouvrir le dossier</button></div>
 ${c?.email?`<p class="note" style="text-align:left">Pensez à envoyer la copie au client : téléchargez le PDF puis joignez-le à un e-mail à <b>${esc(c.email)}</b>.</p>`:''}</div>`}
 
@@ -348,10 +364,10 @@ function pad(cv,key){if(!cv)return;const r=cv.getBoundingClientRect(),d=window.d
  cv.onpointermove=e=>{if(!on)return;const p=pos(e);x.beginPath();x.moveTo(lx,ly);x.lineTo(p.x,p.y);x.stroke();lx=p.x;ly=p.y};
  const end=()=>{if(!on)return;on=false;S.wiz[key]=cv.toDataURL('image/png');S.wiz[key==='sigC'?'rC':'rE']=r.width/r.height;cv.parentElement.classList.add('has');saveDraft()};
  cv.onpointerup=end;cv.onpointercancel=end;cv.onpointerleave=end}
-function afterWiz(){if(S.wiz?.step===4){pad($('#sigC'),'sigC');pad($('#sigE'),'sigE')}}
+function afterWiz(){if(S.wiz&&S.wiz.step===STEPS[S.wiz.type].length-1){pad($('#sigC'),'sigC');pad($('#sigE'),'sigE')}}
 let rz;addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(()=>{if(S.view==='wiz')afterWiz()},250)});
 
-function validate(){const w=S.wiz,lev=w.type==='levee';
+function validate(){const w=S.wiz,lev=w.type==='levee';if(isPose(w.type))return validatePose(w);
  if(w.step===0&&!w.date)return'Indiquez la date de réception.';
  if(w.step===1&&!String(w.ouvrage.modele).trim())return'Indiquez le modèle installé.';
  if(w.step===2&&!lev){const n=checklist(w.ouvrage.cat).filter(i=>!w.checks[i.k]).length;if(n)return`Il reste ${n} point(s) à vérifier avec le client.`}
@@ -363,6 +379,61 @@ function validate(){const w=S.wiz,lev=w.type==='levee';
  return''}
 function showErr(m){const e=$('#werr');e.innerHTML=m?`<p class="err">${esc(m)}</p>`:'';if(m)e.scrollIntoView({behavior:'smooth',block:'center'})}
 
+
+/* ---------- pose piscine coque : relevé de niveaux & contrôles avant remblai ---------- */
+function altCalc(w){const a=w.alt||{},lec=a.mode==='lecture',pts=a.pts||{};
+ const refL=lec?(a.ref==='repere'?num(a.refLecture):num(pts[a.ref]?.v)):null;const h={};
+ PTS.forEach(p=>{if(lec){const L=num(pts[p]?.v);h[p]=(L==null||refL==null)?null:Math.round((refL-L)*10)/10}else h[p]=a.ref===p?0:num(pts[p]?.v)});
+ const vals=PTS.map(p=>h[p]).filter(v=>v!=null),complete=vals.length===4,mx=complete?Math.max(...vals):null,mn=complete?Math.min(...vals):null;
+ const ecart=complete?Math.round((mx-mn)*10)/10:null,tol=num(S.cfg.tolNiveau);const t=tol&&tol>0?tol:null;
+ return{h,ecart,tol:t,ok:(ecart!=null&&t!=null)?ecart<=t:null,complete,hi:complete?PTS.filter(p=>h[p]===mx):[],lo:complete?PTS.filter(p=>h[p]===mn):[]}}
+function ctlCalc(w){const t=w.ctl||{},att=num(S.cfg.epRadier)||100,ep=num(t.radier?.ep);const radierOk=ep==null?null:ep>=att,puitsOk=t.puits?.pos?t.puits.pos!=='dessus':null;
+ const photos={};(w.photos||[]).forEach(p=>{if(p.tag)photos[p.tag]=(photos[p.tag]||0)+1});
+ return{att,ep,radierOk,puitsOk,ok:(radierOk==null||puitsOk==null)?null:(radierOk&&puitsOk),photos}}
+const fmm=v=>v==null?'—':(v>0?'+':'')+String(v).replace('.',',')+' mm';
+function altResults(w){const k=altCalc(w);const pos={A:[100,30,'end',-12,-6],B:[300,30,'start',12,-6],C:[300,140,'start',12,18],D:[100,140,'end',-12,18]};
+ const svg=`<svg viewBox="0 0 400 172" style="width:100%;max-width:460px;display:block;margin:0 auto 8px" role="img" aria-label="Schéma de la coque et des 4 points"><rect x="100" y="30" width="200" height="110" rx="16" fill="#cfe9f1" stroke="#13335e" stroke-width="2.5"/><text x="200" y="90" text-anchor="middle" font-size="13" fill="#0a7a96">coque</text>${PTS.map(p=>{const[x,y,an,dx,dy]=pos[p];const bad=k.ok===false&&(k.hi.includes(p)||k.lo.includes(p));return`<circle cx="${x}" cy="${y}" r="8" fill="${w.alt.ref===p?'#c9a45c':'#13335e'}"/><text x="${x+dx}" y="${y+dy}" text-anchor="${an}" font-size="14" font-weight="700" fill="${bad?'#b3261e':'currentColor'}">${p} : ${fmm(k.h[p])}</text>`}).join('')}</svg>`;
+ const v=k.ecart==null?'<p class="mute" style="text-align:center">Renseignez les 4 points pour calculer l’écart.</p>':`<p style="text-align:center;font-size:18px;margin-bottom:4px"><b>Écart maximal : ${String(k.ecart).replace('.',',')} mm</b>${k.tol!=null?` <span class="mute">(tolérance ${k.tol} mm)</span></p><p style="text-align:center"><span class="badge ${k.ok?'b-ok':'b-ko'}" style="font-size:15px;padding:6px 14px">${k.ok?'Conforme':'Hors tolérance'}</span></p>`:'</p><p class="mute" style="text-align:center;font-size:14px">Tolérance non définie : Ma société → Pose des piscines coques.</p>'}`;
+ return svg+v}
+function radVerdict(w){const k=ctlCalc(w);return k.radierOk==null?'':`<p><span class="badge ${k.radierOk?'b-ok':'b-ko'}">${k.radierOk?'Épaisseur conforme':'Épaisseur insuffisante'}</span> <span class="mute">attendu ${k.att} mm</span></p>`}
+function tagPhotos(tag){const l=S.wiz.photos.filter(p=>p.tag===tag);return`<div class="ph" style="margin-top:8px">${l.map(p=>`<div class="t"><img src="${esc(src(p))}" alt="${esc(TAGS[tag]||'')}"><button class="x" data-act="delWph" data-k="${esc(p.key)}" aria-label="Retirer la photo">×</button>${p.assetId?'':'<i class="up">envoi…</i>'}</div>`).join('')}<label class="addph">Appareil photo<input type="file" accept="image/*" capture="environment" data-file="tag" data-tag="${tag}" hidden></label><label class="addph">Galerie<input type="file" accept="image/*" multiple data-file="tag" data-tag="${tag}" hidden></label></div>`}
+function sigBlock(w){return`<div class="card sec"><h2>Déclaration</h2><p><b>${esc(declaration(w))}</b></p><div class="legal">${legal(w).map(p=>`<p>${esc(p)}</p>`).join('')}</div></div>
+<div class="card sec"><h2>Signatures</h2><div class="g2"><div>${inp('Nom du client signataire *','signClientNom')}<div class="sigbox ${w.sigC?'has':''}"><canvas id="sigC" aria-label="Signature du client"></canvas></div><button class="btn sm" data-act="clearSig" data-k="sigC">Effacer</button></div>
+<div>${inp("Représentant de l'entreprise *",'signEntNom')}<div class="sigbox ${w.sigE?'has':''}"><canvas id="sigE" aria-label="Signature de l'entreprise"></canvas></div><button class="btn sm" data-act="clearSig" data-k="sigE">Effacer</button></div></div>
+<label class="acc"><input type="checkbox" data-b="accept" ${w.accept?'checked':''}> Le client déclare avoir lu le présent document, en accepter les termes, et recevra une copie PDF.</label></div>`}
+function poseBody(w,c){const last=STEPS[w.type].length-1;
+ if(w.step===0)return`<div class="card"><h2>${TITLES[w.type]}</h2><p class="note">${w.type==='altimetrie'?'À remplir dès que la coque est posée dans le trou, avant tout remblai. Ce relevé se signe seul, avant les autres documents.':'Contrôles du lit de pose, du puits de décompression et des raccordements enterrés, avant remblaiement.'}</p><div class="g2">${inp('Date','date','date')}${inp('Lieu (commune)','lieu')}</div><p class="mute">Chantier : ${esc(chAddr(c)||'adresse non renseignée')}</p></div>
+<div class="card sec"><h2>Coque</h2><div class="g2">${inp('Marque / fabricant','ouvrage.marque','text','list="brands"')}${inp('Modèle *','ouvrage.modele')}${inp('Dimensions','ouvrage.dims','text','placeholder="ex. 8,00 × 4,00 m"')}${inp('N° de série / lot','ouvrage.serie')}</div><datalist id="brands">${BRANDS.map(b=>`<option value="${esc(b)}">`).join('')}</datalist></div>
+<div class="card sec"><h2>Intervenants</h2><div class="g2">${inp('N° de devis / bon de commande','refs.devis')}${inp("Représentant de l'entreprise",'signEntNom')}${inp('Équipe de pose','equipe')}</div></div>`;
+ if(w.type==='altimetrie'&&w.step===1){const a=w.alt,lec=a.mode==='lecture';
+  return`<div class="card"><h2>Méthode</h2><div class="g2"><label class="f"><span>Saisie</span><select data-b="alt.mode"><option value="lecture" ${lec?'selected':''}>Lectures sur la mire (mm)</option><option value="ecart" ${lec?'':'selected'}>Hauteurs par rapport au point 0 (mm)</option></select></label>
+<label class="f"><span>Point 0 (référence)</span><select data-b="alt.ref">${PTS.map(p=>`<option value="${p}" ${a.ref===p?'selected':''}>Point ${p}</option>`).join('')}<option value="repere" ${a.ref==='repere'?'selected':''}>Repère fixe (hors coque)</option></select></label></div>
+${a.ref==='repere'?`<div class="g2">${inp('Description du repère *','alt.refLabel','text','placeholder="ex. seuil de porte-fenêtre, piquet…"')}${lec?inp('Lecture mire sur le repère (mm) *','alt.refLecture','number','step="1"'):''}</div>${tagPhotos('ref')}`:''}
+<p class="mute">${lec?'Saisissez la valeur lue sur la mire à chaque point. Plus la lecture est grande, plus le point est bas : l’appli calcule les hauteurs.':'Saisissez la hauteur de chaque point par rapport au point 0, en mm (positif au-dessus, négatif en dessous).'}</p></div>
+<div class="card sec"><h2>Les 4 points</h2><p class="mute">A, B, C, D dans le sens des aiguilles d’une montre, en partant de l’angle de votre choix. Une photo de la mire par point.</p><div id="altres">${altResults(w)}</div>
+${PTS.map(p=>`<div class="res"><b>Point ${p}</b>${a.ref===p?' <span class="badge b-todo">point 0</span>':''}<div class="g2">${(!lec&&a.ref===p)?'<p class="mute" style="margin:30px 0 14px">Point 0 : hauteur 0 mm</p>':inp(lec?'Lecture mire (mm) *':'Hauteur par rapport au point 0 (mm) *',`alt.pts.${p}.v`,'number','step="1"')}${inp('Commentaire',`alt.pts.${p}.c`)}</div>${tagPhotos('pt-'+p)}</div>`).join('')}</div>
+<div class="card sec">${ta('Observations','obs')}</div>`}
+ if(w.type==='controle'&&w.step===1){const t=w.ctl;
+  return`<div class="card"><h2>Lit de pose (radier)</h2><div class="g2">${inp('Nature du lit de pose','ctl.radier.nature')}${inp(`Épaisseur mesurée (mm) *`,'ctl.radier.ep','number','step="1"')}</div><div id="radv">${radVerdict(w)}</div>${inp('Commentaire','ctl.radier.c')}${tagPhotos('radier')}</div>
+<div class="card sec"><h2>Puits de décompression</h2><p class="mute">Le fond du puits doit être au niveau du radier ou en dessous.</p><div class="dec">${[['niveau','Fond du puits au niveau du radier'],['dessous','Fond du puits sous le niveau du radier'],['dessus','Fond du puits au-dessus du radier (à corriger)']].map(([v,l])=>`<label><input type="radio" name="puits" data-b="ctl.puits.pos" value="${v}" ${t.puits.pos===v?'checked':''}><span><b>${l}</b></span></label>`).join('')}</div>
+<div class="g2" style="margin-top:12px">${inp('Écart mesuré (mm, facultatif)','ctl.puits.mm','number','step="1"')}${inp('Commentaire','ctl.puits.c')}</div>${tagPhotos('puits')}</div>`}
+ if(w.type==='controle'&&w.step===2){const t=w.ctl;
+  return`<div class="card"><h2>Raccordements enterrés</h2><p class="mute">Une ou plusieurs photos de chaque raccord, avant remblai.</p>${RACC.map(([k,l])=>`<div class="res"><b>${l}</b>${inp('Commentaire (nombre, emplacement…)',`ctl.rac.${k}`)}${tagPhotos('r-'+k)}</div>`).join('')}
+<label class="acc"><input type="checkbox" data-b="ctl.souples" ${t.souples?'checked':''}> Tuyaux souples d’un seul tenant, sans raccord enterré</label></div><div class="card sec">${ta('Observations','obs')}</div>`}
+ if(w.step===last){let rec='';
+  if(w.type==='altimetrie'){const a=w.alt;rec=`<div class="card"><h2>Récapitulatif</h2>${altResults(w)}<p class="mute" style="text-align:center">Point 0 : ${a.ref==='repere'?'repère fixe – '+esc(a.refLabel):'point '+a.ref} · ${w.photos.length} photo(s)</p><p class="row"><button class="lnk" data-act="goto" data-s="1">Modifier les mesures</button></p></div>`}
+  else{const k=ctlCalc(w),n=RACC.filter(([r])=>k.photos['r-'+r]).length;rec=`<div class="card"><h2>Récapitulatif</h2><dl class="kv"><dt>Lit de pose</dt><dd>${esc(w.ctl.radier.ep||'—')} mm ${k.radierOk==null?'':`<span class="badge ${k.radierOk?'b-ok':'b-ko'}">${k.radierOk?'conforme':'insuffisant'}</span>`}</dd><dt>Puits</dt><dd>${esc({niveau:'au niveau du radier',dessous:'sous le radier',dessus:'au-dessus du radier'}[w.ctl.puits.pos]||'—')} ${k.puitsOk==null?'':`<span class="badge ${k.puitsOk?'b-ok':'b-ko'}">${k.puitsOk?'conforme':'à corriger'}</span>`}</dd><dt>Raccords</dt><dd>${n} sur ${RACC.length} photographiés</dd><dt>Tuyaux souples</dt><dd>${w.ctl.souples?'d’un seul tenant, vérifié':'non coché'}</dd></dl><p class="row"><button class="lnk" data-act="goto" data-s="1">Modifier</button></p></div>`}
+  return rec+sigBlock(w)}
+ return''}
+function validatePose(w){const last=STEPS[w.type].length-1;
+ if(w.step===0){if(!w.date)return'Indiquez la date.';if(!String(w.ouvrage.modele).trim())return'Indiquez le modèle de coque.'}
+ if(w.type==='altimetrie'&&w.step===1){const a=w.alt,k=altCalc(w);if(a.ref==='repere'&&!String(a.refLabel).trim())return'Décrivez le repère utilisé comme point 0.';if(!k.complete)return'Renseignez la mesure des 4 points'+(a.mode==='lecture'&&a.ref==='repere'?' et la lecture sur le repère':'')+'.';const miss=PTS.filter(p=>!w.photos.some(x=>x.tag==='pt-'+p));if(miss.length)return`Ajoutez une photo de la mire au point ${miss.join(', ')}.`}
+ if(w.type==='controle'&&w.step===1){if(num(w.ctl.radier.ep)==null)return'Indiquez l’épaisseur mesurée du lit de pose.';if(!w.ctl.puits.pos)return'Indiquez la position du fond du puits de décompression.'}
+ if(w.step===last){if(!String(w.signClientNom).trim()||!String(w.signEntNom).trim())return'Indiquez le nom des deux signataires.';if(!w.sigC||!w.sigE)return'Les deux signatures sont nécessaires.';if(!w.accept)return'Le client doit cocher la case de lecture et d’acceptation.'}
+ return''}
+async function addTagPhotos(files,tag){const w=S.wiz;for(const f of files){try{const r=await compress(f);const p={key:'p'+uid(),dataUrl:r.dataUrl,w:r.w,h:r.h,cat:'pendant',tag,name:f.name,assetId:null};
+  w.photos.push(p);render();if(S.assets)up(r.blob,'image/jpeg').then(id=>{p.assetId=id;saveDraft();document.querySelector(`[data-k="${p.key}"]`)?.parentElement?.querySelector('.up')?.remove()}).catch(()=>{})}catch(e){toast('Photo illisible : '+(f.name||''))}}saveDraft()}
+
 /* ---------- PDF ---------- */
 function buildPdf(pv,photos){const{jsPDF}=window.jspdf;const doc=new jsPDF({unit:'mm',format:'a4'});const cfg=pv.entreprise,c=pv.client;
  const W=210,M=15,CW=W-2*M,NAVY=[19,51,94],SAND=[201,164,92],GREY=[90,100,115],INK=[20,28,40];let y=0;
@@ -370,7 +441,7 @@ function buildPdf(pv,photos){const{jsPDF}=window.jspdf;const doc=new jsPDF({unit
  const need=h=>{if(y+h>297-20){doc.addPage();y=M}};
  const para=(s,sz=9.5,col=INK,b=false,ind=0)=>{doc.setFont('helvetica',b?'bold':'normal');doc.setFontSize(sz);doc.setTextColor(...col);for(const l of doc.splitTextToSize(T(s),CW-ind)){need(sz*.42);doc.text(l,M+ind,y+sz*.34);y+=sz*.42}y+=1.2};
  const kv=(k,v)=>{doc.setFont('helvetica','normal');doc.setFontSize(9.5);const ls=doc.splitTextToSize(T(v||'-'),CW-50);const h=ls.length*4+1;need(h);doc.setFont('helvetica','bold');doc.setTextColor(...GREY);doc.text(T(k),M,y+3.3);doc.setFont('helvetica','normal');doc.setTextColor(...INK);doc.text(ls,M+50,y+3.3);y+=h};
- const sec=t=>{need(14);y+=3;doc.setFillColor(...NAVY);doc.rect(M,y,CW,7,'F');doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(255,255,255);doc.text(T(t),M+2.5,y+4.9);y+=10};
+ const sec=t=>{need(30);y+=3;doc.setFillColor(...NAVY);doc.rect(M,y,CW,7,'F');doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(255,255,255);doc.text(T(t),M+2.5,y+4.9);y+=10};
  const box=(v)=>{doc.setDrawColor(...GREY);doc.setLineWidth(.3);doc.rect(M,y+.6,3.4,3.4);doc.setLineWidth(.6);
   if(v==='ok'){doc.setDrawColor(23,121,74);doc.line(M+.6,y+2.4,M+1.5,y+3.4);doc.line(M+1.5,y+3.4,M+3,y+1.1)}
   if(v==='ko'){doc.setDrawColor(179,38,30);doc.line(M+.7,y+1.2,M+2.7,y+3.4);doc.line(M+2.7,y+1.2,M+.7,y+3.4)}};
@@ -382,19 +453,37 @@ function buildPdf(pv,photos){const{jsPDF}=window.jspdf;const doc=new jsPDF({unit
  doc.setFont('helvetica','normal');doc.setFontSize(8);
  [cfg.forme,cfg.adresse,[cfg.siret&&('SIRET '+cfg.siret),cfg.tel,cfg.email,cfg.site].filter(Boolean).join(' - '),cfg.assureur?('Assurance décennale / RC pro : '+cfg.assureur+(cfg.police?' - police n° '+cfg.police:'')):''].filter(Boolean).forEach((l,i)=>doc.text(T(l).slice(0,125),HX,16.6+i*3.7));
  doc.setFont('helvetica','bold');doc.setFontSize(10);doc.text(T(pv.ref),W-M,12,{align:'right'});doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.text(T('Établi le '+fmtD(pv.date)),W-M,17,{align:'right'});
- y=41;doc.setTextColor(...NAVY);doc.setFont('helvetica','bold');doc.setFontSize(16);doc.text(T(pv.type==='levee'?'Procès-verbal de levée des réserves':'Procès-verbal de réception des travaux'),M,y);y+=5;
- doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(...GREY);doc.text(T(pv.type==='levee'?'Suite au PV de réception n° '+pv.parentRef:'Article 1792-6 du Code civil - réception contradictoire'),M,y);y+=4;
+ y=41;doc.setTextColor(...NAVY);doc.setFont('helvetica','bold');doc.setFontSize(16);doc.text(T({levee:'Procès-verbal de levée des réserves',altimetrie:'Relevé altimétrique de la coque',controle:'Contrôles de pose avant remblaiement'}[pv.type]||'Procès-verbal de réception des travaux'),M,y);y+=5;
+ doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(...GREY);doc.text(T(pv.type==='levee'?'Suite au PV de réception n° '+pv.parentRef:pv.type==='altimetrie'?'Pose de piscine coque - relevé contradictoire avant remblaiement':pv.type==='controle'?'Lit de pose, puits de décompression et raccordements enterrés':'Article 1792-6 du Code civil - réception contradictoire'),M,y);y+=4;
  sec('1. Les parties');
  kv("Entreprise",[cfg.raison,cfg.adresse].filter(Boolean).join(' - '));kv("Représentée par",pv.signEntNom);if(pv.equipe)kv("Équipe de pose",pv.equipe);
  kv("Maître de l'ouvrage",[fullName(c),c.societe].filter(Boolean).join(' - '));kv("Adresse",addr(c));kv("Téléphone / e-mail",[c.tel,c.email].filter(Boolean).join(' - '));kv("Adresse du chantier",chAddr(c));
  sec('2. Références du chantier');
  kv("Devis / bon de commande",[pv.refs.devis,pv.refs.devisDate&&('du '+fmtD(pv.refs.devisDate))].filter(Boolean).join(' '));if(pv.refs.facture)kv("Facture",pv.refs.facture);
- kv("Travaux",[pv.refs.debut&&('du '+fmtD(pv.refs.debut)),pv.refs.fin&&('au '+fmtD(pv.refs.fin))].filter(Boolean).join(' '));kv("Réception",`le ${fmtD(pv.date)} à ${pv.lieu||'-'}`);
- sec('3. Ouvrage réceptionné');const o=pv.ouvrage;
+ if(!isPose(pv.type))kv("Travaux",[pv.refs.debut&&('du '+fmtD(pv.refs.debut)),pv.refs.fin&&('au '+fmtD(pv.refs.fin))].filter(Boolean).join(' '));kv(isPose(pv.type)?"Date du relevé":"Réception",`le ${fmtD(pv.date)} à ${pv.lieu||'-'}`);
+ sec(isPose(pv.type)?'3. Coque posée':'3. Ouvrage réceptionné');const o=pv.ouvrage;
  kv("Nature",CATS[o.cat]);kv("Marque / fabricant",o.marque);kv("Modèle",o.modele);if(o.dims)kv("Dimensions",o.dims);if(o.coloris)kv("Coloris / finition",o.coloris);if(o.serie)kv("N° de série / lot",o.serie);if(o.options)kv("Options et équipements",o.options);if(o.securite)kv("Dispositif de sécurité",o.securite);
- if(pv.type==='reception'){sec('4. Vérifications contradictoires (cochées par le maître de l\'ouvrage)');const L={ok:'Conforme',ko:'Réserve',na:'Sans objet'};for(const i of checklist(o.cat))chk(i.t,pv.checks[i.k],L)}
+ if(isPose(pv.type)){const a=pv.alt||{},k=pv.calc||{},tg=k.photos||{};
+  if(pv.type==='altimetrie'){sec('4. Relevé des 4 points (avant remblaiement)');
+   para(`Méthode : niveau laser et mire, valeurs en millimètres. ${a.mode==='lecture'?'Les lectures sur la mire sont converties en hauteurs relatives (lecture au point 0 moins lecture au point).':'Hauteurs relevées directement par rapport au point 0.'}`,8.8,GREY);
+   para(`Point 0 (référence) : ${a.ref==='repere'?'repère fixe - '+(a.refLabel||'')+(a.mode==='lecture'&&a.refLecture!==''?' (lecture '+a.refLecture+' mm)':''):'point '+a.ref}`,9.5,INK,true);
+   need(62);const rx=M+24,ry=y+8,rw=66,rh=38;doc.setFillColor(207,233,241);doc.setDrawColor(...NAVY);doc.setLineWidth(.6);doc.roundedRect(rx,ry,rw,rh,3,3,'FD');
+   const P={A:[rx,ry,'right',-3,-2.5],B:[rx+rw,ry,'left',3,-2.5],C:[rx+rw,ry+rh,'left',3,5.5],D:[rx,ry+rh,'right',-3,5.5]};
+   const fm=v=>v==null?'-':(v>0?'+':'')+String(v).replace('.',',')+' mm';
+   for(const p of PTS){const[x,yy,al,dx,dy]=P[p];doc.setFillColor(...(a.ref===p?SAND:NAVY));doc.circle(x,yy,1.6,'F');doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(...INK);doc.text(T(p+' : '+fm(k.h?.[p])),x+dx,yy+dy,{align:al})}
+   let ty=ry+2;const tx=M+122;doc.setFontSize(8.5);doc.setFont('helvetica','bold');doc.setTextColor(...GREY);doc.text('Point',tx,ty);doc.text(T(a.mode==='lecture'?'Lecture':'Saisie'),tx+14,ty);doc.text(T('Hauteur / point 0'),tx+32,ty);ty+=5.5;doc.setFont('helvetica','normal');doc.setTextColor(...INK);
+   for(const p of PTS){doc.text(p,tx,ty);doc.text(T(a.ref===p&&a.mode!=='lecture'?'0':(a.pts?.[p]?.v!==''&&a.pts?.[p]?.v!=null?a.pts[p].v+' mm':'-')),tx+14,ty);doc.text(T(fm(k.h?.[p])),tx+32,ty);ty+=5.5}
+   y=ry+rh+11;need(16);const ok=k.ok;doc.setFillColor(...(ok===false?[251,227,225]:ok===true?[226,243,233]:[238,242,248]));doc.roundedRect(M,y,CW,12,2,2,'F');doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(...(ok===false?[179,38,30]:ok===true?[23,121,74]:INK));
+   doc.text(T(`Écart maximal entre les 4 points : ${k.ecart==null?'-':String(k.ecart).replace('.',',')+' mm'}${k.tol!=null?'   |   tolérance '+k.tol+' mm   |   '+(ok?'CONFORME':'HORS TOLÉRANCE'):''}`),M+4,y+7.8);y+=16;
+   for(const p of PTS)if(a.pts?.[p]?.c)para(`Point ${p} : ${a.pts[p].c}`,9)}
+  else{const t=pv.ctl||{};
+   sec('4. Lit de pose (radier)');kv('Nature',t.radier?.nature);kv('Épaisseur mesurée',num(t.radier?.ep)!=null?t.radier.ep+' mm':'-');kv('Épaisseur attendue',(k.att||'-')+' mm');kv('Résultat',k.radierOk==null?'-':k.radierOk?'Conforme':'Épaisseur insuffisante');if(t.radier?.c)kv('Commentaire',t.radier.c);
+   sec('5. Puits de décompression');kv('Fond du puits',{niveau:'Au niveau du radier',dessous:'Sous le niveau du radier',dessus:'Au-dessus du radier'}[t.puits?.pos]||'-');if(num(t.puits?.mm)!=null)kv('Écart mesuré',t.puits.mm+' mm');kv('Résultat',k.puitsOk==null?'-':k.puitsOk?'Conforme':'À corriger');if(t.puits?.c)kv('Commentaire',t.puits.c);
+   sec('6. Raccordements enterrés (photos en annexe)');for(const[r,l]of RACC){const n=tg['r-'+r]||0;chk(l+(t.rac?.[r]?' - '+t.rac[r]:''),n?'ok':'na',{ok:n+' photo(s)',na:'Sans photo'})}
+   chk("Tuyaux souples d'un seul tenant, sans raccord enterré",t.souples?'ok':'na',{ok:'Vérifié',na:'Non coché'})}}
+ else if(pv.type==='reception'){sec('4. Vérifications contradictoires (cochées par le maître de l\'ouvrage)');const L={ok:'Conforme',ko:'Réserve',na:'Sans objet'};for(const i of checklist(o.cat))chk(i.t,pv.checks[i.k],L)}
  else{sec('4. Contrôle des réserves');pv.reserves.forEach((r,i)=>chk(`Réserve ${i+1} : ${r.txt}${r.comment?' - '+r.comment:''}`,r.levee?'ok':'ko',{ok:'Levée',ko:'Non levée'}))}
- sec('5. Décision');need(16);const dy=y;doc.setDrawColor(...SAND);doc.setLineWidth(.8);y+=3;para(pv.declaration,10,INK,true,4);if(pv.decision==='refus'&&pv.refus)para('Motif du refus : '+pv.refus,9.5,INK,false,4);y+=1;doc.line(M,dy,M,y);
+ sec(isPose(pv.type)?'Attestation du maître de l\'ouvrage':'5. Décision');need(16);const dy=y;doc.setDrawColor(...SAND);doc.setLineWidth(.8);y+=3;para(pv.declaration,10,INK,true,4);if(pv.decision==='refus'&&pv.refus)para('Motif du refus : '+pv.refus,9.5,INK,false,4);y+=1;doc.line(M,dy,M,y);
  if(pv.type==='reception'&&pv.reserves.length){sec('6. Réserves');pv.reserves.forEach((r,i)=>{para(`${i+1}. ${r.txt}`,9.5,INK,true);para(`À lever avant le : ${r.delai?fmtD(r.delai):'délai à convenir'}${r.photoKey?' - photo en annexe':''}`,8.8,GREY)})}
  if(pv.obs){sec('Observations du maître de l\'ouvrage');para(pv.obs)}
  sec('Mentions');legal(pv).forEach(p=>para(p,8.3,GREY));
@@ -423,19 +512,21 @@ async function finalize(){const w=S.wiz,err=validate();if(err)return showErr(err
   const signedAt=new Date().toISOString();
   const resPh=w.reserves.map((r,i)=>[r,i]).filter(([r])=>r.photoKey).map(([r,i])=>({...w.photos.find(p=>p.key===r.photoKey),caption:`Réserve n° ${i+1}`})).filter(p=>p.dataUrl);
   const finPh=w.photos.filter(p=>p.cat==='fin').map(p=>({...p,caption:'Fin de chantier'}));
+  const TORD=Object.keys(TAGS);const posePh=w.photos.filter(p=>p.tag&&p.dataUrl).sort((a,b)=>TORD.indexOf(a.tag)-TORD.indexOf(b.tag)).map(p=>({...p,caption:TAGS[p.tag]||'Photo'}));
   const core={ref:w.ref,type:w.type,parentId:w.parentId,parentRef:w.parentRef,clientId:w.clientId,date:w.date,lieu:w.lieu,refs:w.refs,ouvrage:w.ouvrage,equipe:w.equipe,checks:w.checks,
    decision:w.decision,reserves:w.reserves.map(r=>({txt:r.txt,delai:r.delai||'',levee:!!r.levee,comment:r.comment||'',photoKey:r.photoKey||null})),refus:w.refus,obs:w.obs,
+   alt:isPose(w.type)?w.alt:null,ctl:w.type==='controle'?w.ctl:null,calc:w.type==='altimetrie'?altCalc(w):w.type==='controle'?ctlCalc(w):null,
    signClientNom:w.signClientNom,signEntNom:w.signEntNom,signedAt,ua:navigator.userAgent.slice(0,150),entreprise:{...S.cfg},
    client:Object.fromEntries(['civ','nom','prenom','societe','tel','email','adresse','cp','ville','idem','chAdresse','chCp','chVille'].map(k=>[k,c?.[k]??''])),sigClientAssetId:sigC,sigEntAssetId:sigE};
   core.declaration=declaration(w);core.dataHash=await sha256(new TextEncoder().encode(JSON.stringify(core)));
-  busyMsg('Génération du PDF…');const pdf=buildPdf({...core,sigCData:w.sigC,sigEData:w.sigE,rC:w.rC,rE:w.rE},[...resPh,...finPh]);
+  busyMsg('Génération du PDF…');const pdf=buildPdf({...core,sigCData:w.sigC,sigEData:w.sigE,rC:w.rC,rE:w.rE},isPose(w.type)?posePh:[...resPh,...finPh]);
   const pdfSha=await sha256(await pdf.arrayBuffer());busyMsg('Classement dans le dossier…');const pdfId=await up(pdf,'application/pdf');
   const open=w.type==='levee'?core.reserves.some(r=>!r.levee):(w.decision==='avec'&&core.reserves.length>0);
   await S.db.doc('pvs/'+w.pvId).set({...core,pdfAssetId:pdfId,pdfSha,photoIds:w.photos.map(p=>p.assetId),reservesOuvertes:open,createdAt:signedAt});
-  for(const p of w.photos)await S.db.doc('files/f'+uid()).set({clientId:w.clientId,pvId:w.pvId,kind:'photo',cat:p.cat,name:p.name||'photo.jpg',assetId:p.assetId,contentType:'image/jpeg',caption:p.cat==='reserve'?'Réserve':'',createdAt:signedAt});
+  for(const p of w.photos)await S.db.doc('files/f'+uid()).set({clientId:w.clientId,pvId:w.pvId,kind:'photo',cat:p.cat,name:p.name||'photo.jpg',assetId:p.assetId,contentType:'image/jpeg',caption:p.tag?(TAGS[p.tag]||''):p.cat==='reserve'?'Réserve':'',createdAt:signedAt});
   if(w.parentId)await S.db.doc('pvs/'+w.parentId).update({reservesOuvertes:false,suiviPar:w.pvId});
   await S.db.doc('clients/'+w.clientId).update({updatedAt:signedAt,produit:[CATS[w.ouvrage.cat],w.ouvrage.marque,w.ouvrage.modele].filter(Boolean).join(' ')});
-  clearDraft(w.clientId);S.last={cid:w.clientId,ref:w.ref,pdf,pdfId,fn:`${w.ref}_${safe(c?.nom)}.pdf`};S.wiz=null;closeModal();go('done')}
+  clearDraft(w.clientId,w.type);S.last={cid:w.clientId,ref:w.ref,pdf,pdfId,fn:`${w.ref}_${safe(c?.nom)}.pdf`};S.wiz=null;closeModal();go('done')}
  catch(e){closeModal();saveDraftNow();showErr('Enregistrement interrompu ('+(e.code||e.message||'erreur')+'). Le brouillon est conservé : vérifiez la connexion et appuyez à nouveau sur « Signer et enregistrer ».')}}
 
 function save(fn,data){const a=document.createElement('a');a.href=URL.createObjectURL(data instanceof Blob?data:new Blob([data]));a.download=fn;document.body.append(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},2000)}
@@ -464,6 +555,8 @@ const A={
  home:()=>{S.unF?.();S.unF=null;go('home')},settings:()=>go('settings'),back:()=>go('client'),
  newClient:()=>go('cform',{edit:null}),editClient:()=>go('cform',{edit:S.cid}),open:a=>openClient(a.dataset.id),
  newPv:()=>{const d=loadDraft(S.cid);if(d&&d.type){modal(`<h2>Un PV est en cours</h2><p>Brouillon ${esc(d.ref)} enregistré le ${esc(fmtDT(d.saved))}, à l'étape « ${esc(STEPS[d.type][d.step])} ».</p><div class="row"><button class="btn pri" data-act="resume">Reprendre</button><button class="btn" data-act="restart">Recommencer</button></div>`)}else{S.wiz=newWiz(S.cid,'reception');go('wiz')}},
+ newPose:a=>{const t=a.dataset.t,d=loadDraft(S.cid,t);S.pendingT=t;if(d&&d.type){modal(`<h2>${esc(TITLES[t])} en cours</h2><p>Brouillon ${esc(d.ref)} enregistré le ${esc(fmtDT(d.saved))}, à l'étape « ${esc(STEPS[t][d.step])} ».</p><div class="row"><button class="btn pri" data-act="resumeP">Reprendre</button><button class="btn" data-act="restartP">Recommencer</button></div>`)}else{S.wiz=newWiz(S.cid,t);go('wiz')}},
+ resumeP:()=>{S.wiz=loadDraft(S.cid,S.pendingT);closeModal();go('wiz')},restartP:()=>{clearDraft(S.cid,S.pendingT);closeModal();S.wiz=newWiz(S.cid,S.pendingT);go('wiz')},
  resume:()=>{S.wiz=loadDraft(S.cid);closeModal();go('wiz')},restart:()=>{clearDraft(S.cid);closeModal();S.wiz=newWiz(S.cid,'reception');go('wiz')},
  levee:a=>{const p=S.pvs.find(x=>x.id===a.dataset.id);if(!p)return;S.wiz=newWiz(p.clientId,'levee',p);go('wiz')},
  quitWiz:()=>{saveDraftNow();const id=S.wiz.clientId;S.wiz=null;openClient(id)},
@@ -500,7 +593,7 @@ const A={
    for(const p of pvs)await S.db.doc('pvs/'+p.id).delete();
    await S.db.doc('clients/'+id).delete();
    for(const u of urls)await S.assets.delete(u).catch(()=>{});
-   clearDraft(id);S.unF?.();S.unF=null;closeModal();toast('Dossier supprimé.');go('home')}
+   ['reception','altimetrie','controle'].forEach(t=>clearDraft(id,t));S.unF?.();S.unF=null;closeModal();toast('Dossier supprimé.');go('home')}
   catch(e){closeModal();toast('Suppression impossible ('+(e.code||e.message)+'). Les règles Firebase sont-elles à jour ?')}},
  saveNotes:async()=>{try{await S.db.doc('clients/'+S.cid).update({notes:$('#notes').value,updatedAt:new Date().toISOString()});toast('Notes enregistrées.')}catch(e){toast('Enregistrement impossible.')}}};
 
@@ -510,10 +603,10 @@ document.addEventListener('input',e=>{const el=e.target;
  if(el.id==='q'){S.q=el.value;$('#clist').innerHTML=listHtml();return}
  if(el.name==='idem'){const z=$('#chz');if(z)z.hidden=el.checked;return}
  if(S.view!=='wiz'||!S.wiz)return;
- if(el.dataset.b){if(el.type==='radio'&&!el.checked)return;setP(S.wiz,el.dataset.b,el.type==='checkbox'?el.checked:el.value);saveDraft();if(el.dataset.b==='decision')render()}
+ if(el.dataset.b){if(el.type==='radio'&&!el.checked)return;setP(S.wiz,el.dataset.b,el.type==='checkbox'?el.checked:el.value);saveDraft();const b=el.dataset.b;if(b==='decision'||b==='alt.mode'||b==='alt.ref')render();else if(b.startsWith('alt.')&&$('#altres'))$('#altres').innerHTML=altResults(S.wiz);else if(b==='ctl.radier.ep'&&$('#radv'))$('#radv').innerHTML=radVerdict(S.wiz)}
  else if(el.dataset.r!=null){const r=S.wiz.reserves[+el.dataset.r];if(r){r[el.dataset.f]=el.value;saveDraft()}}});
 document.addEventListener('change',e=>{const el=e.target,k=el.dataset.file;if(!k)return;const files=[...el.files];el.value='';if(!files.length)return;
- if(k==='wiz')addWizPhotos(files,null);else if(k==='res')addWizPhotos(files.slice(0,1),+el.dataset.i);
+ if(k==='tag')addTagPhotos(files,el.dataset.tag);else if(k==='wiz')addWizPhotos(files,null);else if(k==='res')addWizPhotos(files.slice(0,1),+el.dataset.i);
  else if(k==='cphoto')addFiles(files,'photo',$('#pcat').value);else if(k==='cdoc')addFiles(files,'doc',$('#dcat').value)});
 document.addEventListener('submit',async e=>{e.preventDefault();const f=e.target;if(f.id==='lf')return login(f);if(!S.db)return toast('Connexion requise.');
  try{if(f.id==='cf'){const d=Object.fromEntries(new FormData(f));d.idem=f.idem.checked;if(!String(d.nom).trim())return toast('Le nom est obligatoire.');const now=new Date().toISOString();
